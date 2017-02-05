@@ -5,31 +5,8 @@ Blender: 245
 Group: 'Import'
 Tooltip: 'Import from Nexus Buddy 2 file format (.na2)'
 """
-# Original Milkshape ASCII Txt Import:
-# Author: Markus Ilmola
-# Email: markus.ilmola@pp.inet.fi
-#
-# Additional changes by Deliverator
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-#
 
-# import needed stuff
 import os.path
-import re
-import math
 from math import *
 import Blender
 from Blender import Mathutils, Window, Draw
@@ -92,8 +69,7 @@ def getNextLine(file):
 		if len(line)>=2 and line[0]=='/' and line[1]=='/':
 			ready = False
 	return line	
-	
-# imports a MilkShape3D ascii file to the current scene
+
 def import_na2(path):
 
 	print("START NA2 IMPORT...")
@@ -181,7 +157,6 @@ def import_na2(path):
 			for j in xrange(numFrames):
 				try:
 					lines = getNextLine(file).split()
-					#print(lines)
 					if len(lines) != 16:
 						raise ValueError
 					frames.append( \
@@ -226,18 +201,6 @@ def import_na2(path):
 					pose.update()
 					poseBone.insertKey(armOb, currentFrame + y, Blender.Object.Pose.LOC, True)
 					poseBone.insertKey(armOb, currentFrame + y, Blender.Object.Pose.ROT, True)
-			
-			#for z in xrange(numBones):
-			#	boneName = boneNames[z]
-			#	x = boneFrameSets[z][y]
-			#	poseBone = pose.bones[boneName]
-			#	if poseBone != None:
-			#		
-			#		if (y == 0) and boneName.startswith("Staff_"):
-			#			print(boneName)
-			#			bone = armOb.data.bones[boneName]
-			#			print(bone.matrix)
-			#			print(poseBone.poseMatrix)
 
 	Blender.Redraw()
 

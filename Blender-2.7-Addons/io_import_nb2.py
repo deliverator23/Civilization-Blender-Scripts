@@ -1,21 +1,3 @@
-# ##### BEGIN GPL LICENSE BLOCK #####
-#
-#  This program is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
-#  of the License, or (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software Foundation,
-#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# ##### END GPL LICENSE BLOCK #####
-
 bl_info = {
     "name": "Import Nexus Buddy 2(.nb2)",
     "author": "Deliverator",
@@ -29,14 +11,9 @@ bl_info = {
 
 import bpy
 from bpy.props import BoolProperty, IntProperty, EnumProperty, StringProperty
-import mathutils
 from mathutils import Vector, Quaternion, Matrix
 from bpy_extras.io_utils import unpack_list, unpack_face_list
-from os import remove
-
-import time
-import math
-import struct
+from math import radians
 import re
 
 # Converts ms3d euler angles to a rotation matrix
@@ -161,7 +138,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 			if len(lines)!=3:
 				raise ValueError
 			meshName = lines[0]
-			meshName = meshName[1:-1]
+			meshName = meshName[1:-1] + '#M'
 			print ("processing mesh name:%s..." % meshName)
 			material = int(lines[2])
 		except ValueError:
@@ -263,8 +240,6 @@ def do_import(path, DELETE_TOP_BONE=True):
 					meshes[i].tessfaces[fi].vertices_raw[v]= fpol[v]
 		
 		# set texture coordinates and material
-		# print ("Number of UVs in mesh:%d" % len(uvs))
-		
 		meshes[i].tessface_uv_textures.new()
 		for j, face in enumerate(meshes[i].tessfaces):
 			face_uv = meshes[i].tessface_uv_textures[0].data[j]
@@ -294,10 +269,6 @@ def do_import(path, DELETE_TOP_BONE=True):
 	for i in range(numMats):
 			# read name
 			name = getNextLine(file)[1:-1]
-
-			# create the material
-			#mat = Blender.Material.New(name)
-			#mesh.materials += [mat]
 
 			# read ambient color
 			try:
@@ -398,11 +369,10 @@ def do_import(path, DELETE_TOP_BONE=True):
 				raise ValueError
 			pos = [float(lines[1]), float(lines[2]), float(lines[3])]
 			quat = [float(lines[4]), float(lines[5]), float(lines[6]), float(lines[7])]
-			#print 'Read bone: %s' % line
 		except ValueError:
 			return "Invalid position or orientation in a bone!"
 		
-		# # Granny Rotation Quaternions are stored X,Y,Z,W but Blender uses W,X,Y,Z
+		# Granny Rotation Quaternions are stored X,Y,Z,W but Blender uses W,X,Y,Z
 		quaternion = Quaternion((quat[3], quat[0], quat[1], quat[2])) 
 		rotMatrix = quaternion.to_matrix() 
 		rotMatrix.transpose() # Need to transpose to get same behaviour as 2.49 script
@@ -438,14 +408,6 @@ def do_import(path, DELETE_TOP_BONE=True):
 								 [-bone.rot_matrix[4], bone.rot_matrix[1], bone.rot_matrix[7], bone.head[1]], 
 								 [-bone.rot_matrix[5], bone.rot_matrix[2], bone.rot_matrix[8], bone.head[2]], 
 								 [0, 0, 0, 1]])
-			
-		print (bone.rot_matrix[0], bone.rot_matrix[1], bone.rot_matrix[2])
-		print (bone.rot_matrix[3], bone.rot_matrix[4], bone.rot_matrix[5])
-		print (bone.rot_matrix[6], bone.rot_matrix[7], bone.rot_matrix[8])
-		print (bone.head)
-		print (bone.tail)
-		print ("bone roll")
-		print (bone.roll)
 
 		# read the number of position key frames
 		try:
@@ -485,11 +447,10 @@ def do_import(path, DELETE_TOP_BONE=True):
 			except ValueError:
 				return "Invalid rotation key frame!"
 
-	# Roll Fix
-	#for bone in armature.edit_bones:
-	#	if bone.parent:
-	#		roll = bone.roll
-	#		bone.roll = roll - math.radians(90.0)
+	# Roll fix for all bones
+	for bone in armature.bones.data.edit_bones:
+		roll = bone.roll
+		bone.roll = roll - radians(90.0)
 	
 	# Create Vertex Groups
 	vi = 0
@@ -506,17 +467,17 @@ def do_import(path, DELETE_TOP_BONE=True):
 						grp.add([mvi], boneWeights[j][vi], 'ADD')
 			vi = vi + 1
 		
-		# Give mesh object an armature modifier, using vertex groups but
-		# not envelopes
+		# Give mesh object an armature modifier, using vertex groups but not envelopes
 		mod = meshOb.modifiers.new('mod_' + mesh.name, 'ARMATURE')
 		mod.object = armOb
 		mod.use_bone_envelopes = False
 		mod.use_vertex_groups = True
+		# Parent Mesh Object to Armature Object
+		meshOb.parent = armOb
+		meshOb.parent_type ='ARMATURE'
 
 	if DELETE_TOP_BONE:
-		# Adjust object names, remove top bone for Civ V - Deliverator
-		#armature.makeEditable()
-		
+		# Adjust object names, remove top bone for Civ V
 		bone = armature.bones.data.edit_bones[boneNames[0]]
 		while not bone.parent is None:
 			bone = bone.parent
@@ -530,9 +491,6 @@ def do_import(path, DELETE_TOP_BONE=True):
 		if (len(armature.bones.data.edit_bones) > 1):
 			bpy.ops.object.select_pattern(pattern=name)
 			bpy.ops.armature.delete()
-			#del armature.bones.data.edit_bones[name]
-			
-		# armature.update()
 		
 	bpy.ops.object.editmode_toggle()
 	bpy.ops.object.editmode_toggle()

@@ -60,7 +60,6 @@ except:
 import Blender
 from Blender import *
 import bpy
-import re
 from Blender.Mathutils import Matrix, Vector, RotationMatrix
 
 import BPyObject

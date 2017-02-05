@@ -8,7 +8,6 @@ Tooltip: 'Import from Nexus Buddy 2 file format (.nb2)'
 
 import os.path
 import re
-import math
 from math import *
 import Blender
 from Blender import Mathutils, Window, Draw
@@ -71,9 +70,8 @@ def getNextLine(file):
 		if len(line)>=2 and line[0]=='/' and line[1]=='/':
 			ready = False
 	return line	
-	
-# imports a MilkShape3D ascii file to the current scene
-def import_ms3d_ascii(path):
+
+def import_nb2(path):
 	# limits
 	MAX_NUMMESHES = 1000
 	MAX_NUMVERTS = 100000
@@ -144,7 +142,7 @@ def import_ms3d_ascii(path):
 			if len(lines)!=3:
 				raise ValueError
 			meshName = lines[0]
-			meshName = meshName[1:-1]
+			meshName = meshName[1:-1] + '#M'
 			print 'processing mesh name:%s...' % meshName
 			material = int(lines[2])
 		except ValueError:
@@ -613,7 +611,7 @@ def import_ms3d_ascii(path):
 
 # load the model
 def fileCallback(filename):
-	error = import_ms3d_ascii(filename)
+	error = import_nb2(filename)
 	if error!="":
 		Blender.Draw.PupMenu("An error occured during import: " + error + "|Not all data might have been imported succesfully.", 2)
 

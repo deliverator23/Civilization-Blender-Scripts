@@ -20,7 +20,6 @@ Nexus Buddy 2 Import
 ######################################################
 
 import Blender
-import bpy
 import BPyMesh 
 import BPyObject 
 import BPyMessages
@@ -28,7 +27,7 @@ from Blender.Mathutils import Matrix, Vector, RotationMatrix
 
 rotMatrix_z90_4x4 = RotationMatrix(90, 4, 'z') 
 
-def getTranslationOrientation(ob, file):
+def getTranslationOrientation(ob):
 	if isinstance(ob, Blender.Types.BoneType):
 		
 		matrix = rotMatrix_z90_4x4 * ob.matrix['ARMATURESPACE']
@@ -158,7 +157,7 @@ def saveBR2(filename):
 			boneDepth = boneTuple[1]
 			#boneid = boneid + 1 # World bone is zero
 			
-			position, orientationQuat = getTranslationOrientation(bone, file)
+			position, orientationQuat = getTranslationOrientation(bone)
 			
 			# Get Inverse World Matrix for bone
 			t = bone.matrix['ARMATURESPACE'].copy().invert()
@@ -293,7 +292,7 @@ def saveBR2(filename):
 				#file.write('%s %s ' % (boneIdsList, boneWeightsList))
 				#file.write("\n")
 			
-			position, orientationQuat = getTranslationOrientation(meshObject, file)
+			position, orientationQuat = getTranslationOrientation(meshObject)
 			
 			#file.write('position:%.8f %.8f %.8f\n' % (position[0], position[1], position[2]))
 			#file.write('orientationQuat:%.8f %.8f %.8f %.8f\n' % (orientationQuat[1], orientationQuat[2], orientationQuat[3], orientationQuat[0]))

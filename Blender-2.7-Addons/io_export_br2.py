@@ -1,21 +1,3 @@
-# ##### BEGIN GPL LICENSE BLOCK #####
-#
-#  This program is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
-#  of the License, or (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software Foundation,
-#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# ##### END GPL LICENSE BLOCK #####
-
 bl_info = {
     "name": "Export Nexus Buddy 2(.br2)",
     "author": "Deliverator",
@@ -28,19 +10,11 @@ bl_info = {
     "category": "Import-Export"}
 
 import bpy
-from bpy.props import BoolProperty, IntProperty, EnumProperty, StringProperty
-import mathutils
-from statistics import median
 from mathutils import Vector, Quaternion, Matrix
 from bpy_extras.io_utils import unpack_list, unpack_face_list, ExportHelper
-from os import remove
-
-import time
 import math
-import struct
-import re
 
-def getTranslationOrientation(ob, file):
+def getTranslationOrientation(ob):
 	if isinstance(ob, bpy.types.Bone):
 		
 		ob_matrix_local = ob.matrix_local.copy()
@@ -53,8 +27,6 @@ def getTranslationOrientation(ob, file):
 								
 		rotMatrix_z90_4x4 = Matrix.Rotation(math.radians(90.0), 4, 'Z')
 		rotMatrix_z90_4x4.transpose()
-		
-		#file.write('Name:%s\n' % ob.name)
 
 		t = rotMatrix_z90_4x4 * ob_matrix_local
 		matrix = Matrix([[t[0][0], t[0][1], t[0][2], t[0][3]],
@@ -146,11 +118,9 @@ def getBoneWeights(boneName, weights):
 	
 	return vgroup_data
 
-def do_export(context,  filename):
+def do_export(filename):
 	print ("Start BR2 Export...")
 	file = open( filename, 'w')
-	
-	scene = context.scene
 	
 	filedata = "// Nexus Buddy BR2 - Exported from Blender for import to Nexus Buddy 2\n"
 	
@@ -202,7 +172,7 @@ def do_export(context,  filename):
 			bone = boneTuple[0]
 			boneDepth = boneTuple[1]
 			
-			position, orientationQuat = getTranslationOrientation(bone, file)
+			position, orientationQuat = getTranslationOrientation(bone)
 			
 			# Get Inverse World Matrix for bone
 			x = bone.matrix_local.copy()
@@ -375,7 +345,7 @@ def do_export(context,  filename):
 					grannyVertexBoneWeights[vertId] = []
 				grannyVertexBoneWeights[vertId] = (boneIdsList, boneWeightsList)
 			
-			position, orientationQuat = getTranslationOrientation(meshObject, file)
+			position, orientationQuat = getTranslationOrientation(meshObject)
 			
 			filedata += "vertices\n"
 
@@ -451,8 +421,7 @@ def do_export(context,  filename):
 
 				filedata +='%.8f %.8f %.8f ' % (vertTangent)
 				filedata +='%.8f %.8f %.8f\n' % (vertBinormal)
-				
-				
+
 			# Write Triangles
 			filedata += "triangles\n"
 			for triangle in triangleVertUVIndexes:
@@ -477,7 +446,7 @@ class Import_br2(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         filepath = self.filepath
         filepath = bpy.path.ensure_ext(filepath, self.filename_ext)	
-        do_export(context, filepath)
+        do_export(filepath)
         return {'FINISHED'}
 
     def invoke(self, context, event):
