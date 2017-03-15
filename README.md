@@ -1,5 +1,6 @@
-###Blender Scripts for Nexus Buddy 2, the Civilization V 3D graphics modding tool
+###Blender Scripts for Nexus Buddy 2 and CivNexus6
 
+These scripts are for use with Nexus Buddy 2 (the Civilization V 3D graphics modding tool) and CivNexus6 (the Civilization VI graphics modding tool).
 **Installation For Blender 2.7+**
 
 1. Install the Add-ons by going to Add-ons under User Preferences and selecting Install from File...
