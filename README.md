@@ -2,7 +2,7 @@
 
 **Installation For Blender 2.7+**
 
-1. Copy the files from Blender-2.7-Addons to your Program Files/Blender Foundation/Blender/#version_no#/scripts/addons folder.
+1. Install the Add-ons by going to Add-ons under User Preferences and selecting Install from File...
 2. Activate the Add-ons **Import-Export: Export Nexus Buddy 2 (.br2)** and  **Import-Export: Import Nexus Buddy 2 (.nb2)** under User Preferences > Add-ons.
 
 **Installation For Blender 2.49**
