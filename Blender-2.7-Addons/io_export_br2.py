@@ -1,5 +1,5 @@
 bl_info = {
-    "name": "Export Nexus Buddy 2(.br2)",
+    "name": "Export Nexus Buddy 2 (.br2)",
     "author": "Deliverator",
     "version": (1, 0),
     "blender": (2, 71, 0),
@@ -167,66 +167,72 @@ def do_export(filename):
 		filedata += '%.8f %.8f %.8f ' % (0.0, 0.0, 0.0)
 		filedata += '%.8f %.8f %.8f %.8f ' % (0.0, 0.0, 0.0, 1.0)
 		filedata += '%.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f\n' % (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
-		
-		for boneid, boneTuple in enumerate(sortedBones):
-			bone = boneTuple[0]
-			boneDepth = boneTuple[1]
-			
-			position, orientationQuat = getTranslationOrientation(bone)
-			
-			# Get Inverse World Matrix for bone
-			x = bone.matrix_local.copy()
-			x.transpose()
-			t = Matrix([[-x[2][0], -x[2][1], -x[2][2], -x[2][3]],
-						[x[1][0], x[1][1], x[1][2], x[1][3]],
-						[x[0][0], x[0][1], x[0][2], x[0][3]],
-						[x[3][0], x[3][1], x[3][2], x[3][3]]])
-			t.invert()
-			invWorldMatrix = Matrix([[t[0][1], -t[0][0], t[0][2], t[0][3]],
-								[t[1][1], -t[1][0], t[1][2], t[1][3]],
-								[t[2][1], -t[2][0], t[2][2], t[2][3]],
-								[t[3][1], -t[3][0], t[3][2], t[3][3]]])
-			
-			outputBoneName = bone.name
-			
-			filedata += '%d "%s" ' % (boneid + 1, outputBoneName)   # Adjust bone ids + 1 as zero is the World Bone
-			
-			parentBoneId = 0
-			if bone.parent:
-				parentBoneId = boneIds[bone.parent.name] + 1   # Adjust bone ids + 1 as zero is the World Bone
-			
-			filedata += '%d ' % parentBoneId
-			filedata +='%.8f %.8f %.8f ' % (position[0], position[1], position[2]) 
-			filedata +='%.8f %.8f %.8f %.8f ' % (orientationQuat[1], orientationQuat[2], orientationQuat[3], orientationQuat[0]) # GR2 uses x,y,z,w for Quaternions rather than w,x,y,z
-			filedata += '%.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f' % (invWorldMatrix[0][0], invWorldMatrix[0][1], invWorldMatrix[0][2], invWorldMatrix[0][3], 
-																				invWorldMatrix[1][0], invWorldMatrix[1][1], invWorldMatrix[1][2], invWorldMatrix[1][3],
-																				invWorldMatrix[2][0], invWorldMatrix[2][1], invWorldMatrix[2][2], invWorldMatrix[2][3],
-																				invWorldMatrix[3][0], invWorldMatrix[3][1], invWorldMatrix[3][2], invWorldMatrix[3][3])
-			#End of bone line
-			filedata += "\n"
-		
+
+		print ("armOb.name/armature.bones[0].name/len(boneIds)")
+		print (armOb.name)
+		print (armature.bones[0].name)
+		print (len(boneIds))
+
+		if (len(boneIds) > 1 or armOb.name != armature.bones[0].name):
+			for boneid, boneTuple in enumerate(sortedBones):
+				bone = boneTuple[0]
+				#boneDepth = boneTuple[1]
+
+				position, orientationQuat = getTranslationOrientation(bone)
+
+				# Get Inverse World Matrix for bone
+				x = bone.matrix_local.copy()
+				x.transpose()
+				t = Matrix([[-x[2][0], -x[2][1], -x[2][2], -x[2][3]],
+							[x[1][0], x[1][1], x[1][2], x[1][3]],
+							[x[0][0], x[0][1], x[0][2], x[0][3]],
+							[x[3][0], x[3][1], x[3][2], x[3][3]]])
+				t.invert()
+				invWorldMatrix = Matrix([[t[0][1], -t[0][0], t[0][2], t[0][3]],
+									[t[1][1], -t[1][0], t[1][2], t[1][3]],
+									[t[2][1], -t[2][0], t[2][2], t[2][3]],
+									[t[3][1], -t[3][0], t[3][2], t[3][3]]])
+
+				outputBoneName = bone.name
+
+				filedata += '%d "%s" ' % (boneid + 1, outputBoneName)   # Adjust bone ids + 1 as zero is the World Bone
+
+				parentBoneId = 0
+				if bone.parent:
+					parentBoneId = boneIds[bone.parent.name] + 1   # Adjust bone ids + 1 as zero is the World Bone
+
+				filedata += '%d ' % parentBoneId
+				filedata +='%.8f %.8f %.8f ' % (position[0], position[1], position[2])
+				filedata +='%.8f %.8f %.8f %.8f ' % (orientationQuat[1], orientationQuat[2], orientationQuat[3], orientationQuat[0]) # GR2 uses x,y,z,w for Quaternions rather than w,x,y,z
+				filedata += '%.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f' % (invWorldMatrix[0][0], invWorldMatrix[0][1], invWorldMatrix[0][2], invWorldMatrix[0][3],
+																					invWorldMatrix[1][0], invWorldMatrix[1][1], invWorldMatrix[1][2], invWorldMatrix[1][3],
+																					invWorldMatrix[2][0], invWorldMatrix[2][1], invWorldMatrix[2][2], invWorldMatrix[2][3],
+																					invWorldMatrix[3][0], invWorldMatrix[3][1], invWorldMatrix[3][2], invWorldMatrix[3][3])
+				#End of bone line
+				filedata += "\n"
+
 		filedata += 'meshes:%d\n' % len(modelMeshes[modelObName])
-		
+
 		for meshObject in modelMeshes[modelObName]:
-			
+
 			mesh = meshObject.data
 			meshName = meshObject.name
-			
+
 			filedata += 'mesh:"%s"\n' % meshName
-			
+
 			# Get Normals, Binormals and Tangents
 			vertexNormsBinormsTangs = {}
-			uv_layer = mesh.uv_layers[0].data
+			#uv_layer = mesh.uv_layers[0].data
 			mesh.calc_tangents(mesh.uv_layers[0].name)
-			
+
 			for poly in mesh.polygons:
 
 				for loop_index in poly.loop_indices:
-				
+
 					currentVertexIndex = mesh.loops[loop_index].vertex_index
-					
+
 					loop = mesh.loops[loop_index]
-					
+
 					currentVertNormBinormTang = (loop.normal[0],loop.normal[1],loop.normal[2],
 												loop.tangent[0],loop.tangent[1],loop.tangent[2],
 												loop.bitangent[0],loop.bitangent[1],loop.bitangent[2])
@@ -234,36 +240,36 @@ def do_export(filename):
 					if not currentVertexIndex in vertexNormsBinormsTangs:
 						vertexNormsBinormsTangs[currentVertexIndex] = []
 					vertexNormsBinormsTangs[currentVertexIndex].append(currentVertNormBinormTang)
-					
-			
+
+
 			vertexNormsBinormsTangsSelected = {}
-			
+
 			for vertId in vertexNormsBinormsTangs.keys():
-			
+
 				sum0, sum1, sum2, sum3, sum4, sum5, sum6, sum7, sum8 = 0,0,0,0,0,0,0,0,0
-				
+
 				for currentrow in vertexNormsBinormsTangs[vertId]:
 					sum0 = sum0 + currentrow[0]
 					sum1 = sum1 + currentrow[1]
 					sum2 = sum2 + currentrow[2]
-					
+
 					sum3 = sum3 + currentrow[3]
 					sum4 = sum4 + currentrow[4]
 					sum5 = sum5 + currentrow[5]
-					
+
 					sum6 = sum6 + currentrow[6]
 					sum7 = sum7 + currentrow[7]
 					sum8 = sum8 + currentrow[8]
-					
+
 				numRows = len(vertexNormsBinormsTangs[vertId])
-				
+
 				vertexNormsBinormsTangsSelected[vertId] = (sum0/numRows, sum1/numRows, sum2/numRows,
 															sum3/numRows, sum4/numRows, sum5/numRows,
 															sum6/numRows, sum7/numRows, sum8/numRows)
-			
+
 			# Get Bone Weights
-			parentArmOb = meshObject.modifiers[0].object
-			
+			#parentArmOb = meshObject.modifiers[0].object
+
 			weights = meshNormalizedWeights(meshObject, mesh)
 			vertexBoneWeights = {}
 			print (meshName)
