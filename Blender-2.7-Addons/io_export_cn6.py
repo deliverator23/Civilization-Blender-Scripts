@@ -235,10 +235,12 @@ def do_export(filename):
 						keyVertexGroup = meshObject.vertex_groups.get("VERTEX_KEYS")
 						if keyVertexGroup is not None:
 							weight = vertex.groups[keyVertexGroup.index].weight * 2000000
-							vertBevelIndex = str(int(round(weight)))
+							decodedVertexIndex = str(int(round(weight)))
 
-							if mesh['originalTangentsBinormals'].get(vertBevelIndex) is not None:
-								tangentsBinormals = mesh['originalTangentsBinormals'][vertBevelIndex]
+							print ("{}: decodedVertexIndex:{}".format(index, decodedVertexIndex))
+
+							if mesh['originalTangentsBinormals'].get(decodedVertexIndex) is not None:
+								tangentsBinormals = mesh['originalTangentsBinormals'][decodedVertexIndex]
 								originalVertexNormals[str(index)] = tangentsBinormals
 
 				# This will wipe out custom normals
