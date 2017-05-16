@@ -234,7 +234,7 @@ def do_export(filename):
 
 						keyVertexGroup = meshObject.vertex_groups.get("VERTEX_KEYS")
 						if keyVertexGroup is not None:
-							weight = vertex.groups[keyVertexGroup.index].weight * 20000
+							weight = vertex.groups[keyVertexGroup.index].weight * 2000000
 							vertBevelIndex = str(int(round(weight)))
 
 							if mesh['originalTangentsBinormals'].get(vertBevelIndex) is not None:

@@ -290,7 +290,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 		keyVertexGroup = meshOb.vertex_groups.get("VERTEX_KEYS")
 
 		for v, vertex in enumerate(meshes[i].vertices):
-			encoded_weight = (v / 20000)
+			encoded_weight = (v / 2000000)
 			keyVertexGroup.add([v], encoded_weight, 'ADD')
 			print ("encoded_weight {}".format(encoded_weight))
 			print ("vertex.bevel_weight {}".format(vertex.groups[keyVertexGroup.index].weight))
