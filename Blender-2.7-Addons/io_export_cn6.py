@@ -224,25 +224,22 @@ def do_export(filename):
 
 				filedata += 'mesh:"%s"\n' % meshName
 
-				# Get Normals, Binormals and Tangents
-				vertexNormals = {}
+				# Read in preserved Normals, Binormals and Tangents
 				vertexBinormalsTangents = {}
-				originalLoopNormals = []
+				originalVertexNormals = {}
 
-				for l in mesh.loops:
-					originalLoopNormals.append((l.normal[0],l.normal[1],l.normal[2]))
+				for index, vertex in enumerate(mesh.vertices):
 
-				for poly in mesh.polygons:
-					for loop_index in poly.loop_indices:
+					if mesh.get('originalTangentsBinormals') is not None:
 
-						currentVertexIndex = mesh.loops[loop_index].vertex_index
-						loop = mesh.loops[loop_index]
+						keyVertexGroup = meshObject.vertex_groups.get("VERTEX_KEYS")
+						if keyVertexGroup is not None:
+							weight = vertex.groups[keyVertexGroup.index].weight * 20000
+							vertBevelIndex = str(int(round(weight)))
 
-						currentVertNorm = (loop.normal[0],loop.normal[1],loop.normal[2])
-
-						if not currentVertexIndex in vertexNormals:
-							vertexNormals[currentVertexIndex] = []
-						vertexNormals[currentVertexIndex].append(currentVertNorm)
+							if mesh['originalTangentsBinormals'].get(vertBevelIndex) is not None:
+								tangentsBinormals = mesh['originalTangentsBinormals'][vertBevelIndex]
+								originalVertexNormals[str(index)] = tangentsBinormals
 
 				# This will wipe out custom normals
 				mesh.calc_tangents(mesh.uv_layers[0].name)
@@ -253,7 +250,7 @@ def do_export(filename):
 						currentVertexIndex = mesh.loops[loop_index].vertex_index
 						loop = mesh.loops[loop_index]
 
-						currentVertBinormTang = (loop.tangent[0],loop.tangent[1],loop.tangent[2], loop.bitangent[0], loop.bitangent[1], loop.bitangent[2])
+						currentVertBinormTang = (loop.normal[0], loop.normal[1], loop.normal[2], loop.tangent[0],loop.tangent[1],loop.tangent[2], loop.bitangent[0], loop.bitangent[1], loop.bitangent[2])
 
 						if not currentVertexIndex in vertexBinormalsTangents:
 							vertexBinormalsTangents[currentVertexIndex] = []
@@ -262,8 +259,12 @@ def do_export(filename):
 				# Reset Custom Loop Normals
 				mesh.create_normals_split()
 
-				for j, l in enumerate(mesh.loops):
-					l.normal = originalLoopNormals[j]
+				matchedLoops = 0
+				for loopIndex, loop in enumerate(mesh.loops):
+					if originalVertexNormals.get(str(loop.vertex_index)) is not None:
+						normalsEtc = originalVertexNormals[str(loop.vertex_index)]
+						loop.normal =  (normalsEtc[0], normalsEtc[1], normalsEtc[2])
+						matchedLoops += 1
 
 				mesh.validate(clean_customdata=False)
 
@@ -279,26 +280,24 @@ def do_export(filename):
 				# Average out Normals, Tangents and Bitangents for each Vertex
 				vertexNormsBinormsTangsSelected = {}
 
-				for vertId in vertexNormals.keys():
+				for vertId in vertexBinormalsTangents.keys():
 
 					sum0, sum1, sum2, sum3, sum4, sum5, sum6, sum7, sum8 = 0,0,0,0,0,0,0,0,0
 
-					for currentrow in vertexNormals[vertId]:
+					for currentrow in vertexBinormalsTangents[vertId]:
 						sum0 = sum0 + currentrow[0]
 						sum1 = sum1 + currentrow[1]
 						sum2 = sum2 + currentrow[2]
 
-					for currentrow in vertexBinormalsTangents[vertId]:
-						sum3 = sum3 + currentrow[0]
-						sum4 = sum4 + currentrow[1]
-						sum5 = sum5 + currentrow[2]
+						sum3 = sum3 + currentrow[3]
+						sum4 = sum4 + currentrow[4]
+						sum5 = sum5 + currentrow[5]
 
-						sum6 = sum6 + currentrow[3]
-						sum7 = sum7 + currentrow[4]
-						sum8 = sum8 + currentrow[5]
+						sum6 = sum6 + currentrow[6]
+						sum7 = sum7 + currentrow[7]
+						sum8 = sum8 + currentrow[8]
 
-					numRows = len(vertexNormals[vertId])
-
+					numRows = len(vertexBinormalsTangents[vertId])
 
 					vertexNormsBinormsTangsSelected[vertId] = (sum0/numRows, sum1/numRows, sum2/numRows,
 																sum3/numRows, sum4/numRows, sum5/numRows,
@@ -390,14 +389,11 @@ def do_export(filename):
 
 				filedata += "vertices\n"
 
-				meshVerts = {}
-				for i,vert in enumerate(mesh.vertices):
-					meshVerts[i] = vert
-
 				print ("grannyVertexBoneWeights")
 				print (len(grannyVertexBoneWeights))
 				print ("Write Vertices")
 
+				# Read UV Layers
 				uvs = {}
 				uvs2 = {}
 				uvs3 = {}
@@ -410,17 +406,9 @@ def do_export(filename):
 				preservedTangsBinormsCount = 0
 				calculatedTangsBinormsCount = 0
 
-				for vertex in mesh.vertices:
+				for index, vertex in enumerate(mesh.vertices):
 
-					index = vertex.index
-					vert = meshVerts[index]
-					vertCoord = tuple(vert.co)
-
-					vertNBT = vertexNormsBinormsTangsSelected[index]
-
-					vertNormal = (vertNBT[0], vertNBT[1], vertNBT[2])
-					vertTangent = (vertNBT[3], vertNBT[4], vertNBT[5])
-					vertBinormal = (-vertNBT[6], -vertNBT[7], -vertNBT[8])
+					vertCoord = tuple(vertex.co)
 
 					uv = uvs[index]
 					uv2 = uvs2[index]
@@ -428,53 +416,24 @@ def do_export(filename):
 
 					vertexFound = False
 
-					if mesh.get('originalTangentsBinormals') is not None:
-
-						for key in mesh['originalTangentsBinormals'].keys():
-							keyVertCoords = [key[i:i+8] for i in range(0, 56, 8)]
-							keyVertCoords.append(key[-7:])
-
-							if ((abs(vertCoord[0] - float(keyVertCoords[0])) < 0.0001) and
-									(abs(vertCoord[1] - float(keyVertCoords[1])) < 0.0001) and
-									(abs(vertCoord[2] - float(keyVertCoords[2])) < 0.0001) and
-									(abs(vertNormal[0] - float(keyVertCoords[3])) < 0.0001) and
-									(abs(vertNormal[1] - float(keyVertCoords[4])) < 0.0001) and
-									(abs(vertNormal[2] - float(keyVertCoords[5])) < 0.0001) and
-									(abs(uvs[index][0] - float(keyVertCoords[6])) < 0.0001) and
-									(abs((1 - uvs[index][1]) - float(keyVertCoords[7])) < 0.0001)
-								):
-								tangentsBinormals = mesh['originalTangentsBinormals'][key]
-								vertTangent = (tangentsBinormals[0],tangentsBinormals[1],tangentsBinormals[2])
-								vertBinormal = (tangentsBinormals[3],tangentsBinormals[4],tangentsBinormals[5])
-								vertexFound = True
-								# Debug Stuff!
-								#print("index:{} Found".format(index))
-								#print(vertTangent)
-								#print(vertBinormal)
-							#else:
-								#if ((abs(vertCoord[0] - float(keyVertCoords[0])) < 0.001) and
-								#	(abs(vertCoord[1] - float(keyVertCoords[1])) < 0.001) and
-								#	(abs(vertCoord[2] - float(keyVertCoords[2])) < 0.001) and
-								#	(abs(vertNormal[0] - float(keyVertCoords[3])) < 0.001) and
-								#	(abs(vertNormal[1] - float(keyVertCoords[4])) < 0.001) and
-								#	(abs(vertNormal[2] - float(keyVertCoords[5])) < 0.001) and
-								#	(abs(uvs[index][0] - float(keyVertCoords[6])) < 0.001)):
-									#print("index:{} Not Found".format(index))
-									#print("c1:{}".format(abs(vertCoord[0] - float(keyVertCoords[0]))))
-									#print("c2:{}".format(abs(vertCoord[1] - float(keyVertCoords[1]))))
-									#print("c3:{}".format(abs(vertCoord[2] - float(keyVertCoords[2]))))
-									#print("n1:{}".format(abs(vertNormal[0] - float(keyVertCoords[3]))))
-									#print("n2:{}".format(abs(vertNormal[1] - float(keyVertCoords[4]))))
-									#print("n3:{}".format(abs(vertNormal[2] - float(keyVertCoords[5]))))
-									#print("u1:{}".format(abs(uvs[index][0] - float(keyVertCoords[6]))))
-									#print("u2:{}".format(abs((1 - uvs[index][1]) - float(keyVertCoords[7]))))
+					if originalVertexNormals.get(str(index)) is not None:
+						tangentsBinormals = originalVertexNormals[str(index)]
+						vertNormal = (tangentsBinormals[0],tangentsBinormals[1],tangentsBinormals[2])
+						vertTangent = (tangentsBinormals[3],tangentsBinormals[4],tangentsBinormals[5])
+						vertBinormal = (tangentsBinormals[6],tangentsBinormals[7],tangentsBinormals[8])
+						vertexFound = True
+					else:
+						vertNBT = vertexNormsBinormsTangsSelected[index]
+						vertNormal = (vertNBT[0], vertNBT[1], vertNBT[2])
+						vertTangent = (vertNBT[3], vertNBT[4], vertNBT[5])
+						vertBinormal = (vertNBT[6], vertNBT[7], vertNBT[8])
 
 					if (vertexFound):
 						preservedTangsBinormsCount += 1
 					else:
 						calculatedTangsBinormsCount += 1
 
-					filedata +='%.8f %.8f %.8f ' % (vertCoord[0] + position[0],  vertCoord[1] +  position[1], 1 * (vertCoord[2] + position[2]))
+					filedata +='%.8f %.8f %.8f ' % (vertCoord[0] + position[0],  vertCoord[1] +  position[1], vertCoord[2] + position[2])
 					filedata +='%.8f %.8f %.8f ' % (vertNormal[0], vertNormal[1], vertNormal[2])
 					filedata +='%.8f %.8f %.8f ' % (vertTangent[0], vertTangent[1], vertTangent[2])
 					filedata +='%.8f %.8f %.8f ' % (vertBinormal[0], vertBinormal[1], vertBinormal[2])
@@ -521,8 +480,11 @@ class export_cn6(bpy.types.Operator, ExportHelper):
 
 	def execute(self, context):
 		filepath = self.filepath
-		filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
-		do_export(filepath)
+		abspath = bpy.path.abspath(filepath)
+		directoryPath = abspath.rsplit('\\', 1)[0]
+		finalPath = "{}{}{}{}".format(directoryPath,"\\",bpy.path.display_name_from_filepath(filepath),".cn6")
+		print ("Export Filename: {}".format(finalPath))
+		do_export(finalPath)
 		return {'FINISHED'}
 
 	def invoke(self, context, event):

@@ -228,6 +228,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 		uvs2 = []
 		uvs3 = []
 		numVerts = 0
+		normalsTangentsBinormals = []
 		originalTangentsBinormals = {}
 
 		currentLine = getNextLine(file)
@@ -248,16 +249,16 @@ def do_import(path, DELETE_TOP_BONE=True):
 				uvs3.append([float(lines[16]), 1-float(lines[17])])
 
 				# Stored Original Tangents and Binormals - With trimmed Coords, Normals and UV1 as Key
-				trimmedLines = []
-				for k in range(6):
-					trimmedLines.append("{0:+.7f}".format(float(lines[k]))[:8])
+#				trimmedLines = []
+#				for k in range(6):
+#					trimmedLines.append("{0:+.7f}".format(float(lines[k]))[:8])
 
-				trimmedLines.append("{0:+.7f}".format(float(lines[12]))[:8])
-				trimmedLines.append("{0:+.7f}".format(float(lines[13]))[:7])
-
-				coordNormalKeyString = "{0}{1}{2}{3}{4}{5}{6}{7}".format(trimmedLines[0], trimmedLines[1], trimmedLines[2], trimmedLines[3], trimmedLines[4], trimmedLines[5], trimmedLines[6], trimmedLines[7])
-				tangentsBinormals = [float(lines[6]), float(lines[7]), float(lines[8]), float(lines[9]), float(lines[10]), float(lines[11])]
-				originalTangentsBinormals[coordNormalKeyString] = tangentsBinormals
+#				trimmedLines.append(
+#				trimmedLines.append("{0:+.7f}".format(float(lines[13]))[:7])
+#
+				#coordNormalKeyString = "{0}{1}{2}{3}{4}{5}{6}{7}".format(trimmedLines[0], trimmedLines[1], trimmedLines[2], trimmedLines[3], trimmedLines[4], trimmedLines[5], trimmedLines[6], trimmedLines[7])
+				normalsTangentsBinormals.append([float(lines[3]), float(lines[4]), float(lines[5]), float(lines[6]), float(lines[7]), float(lines[8]), float(lines[9]), float(lines[10]), float(lines[11])])
+				#originalTangentsBinormals[coordNormalKeyString] = tangentsBinormals
 
 				boneIds[0].append(int(lines[18]))
 				boneIds[1].append(int(lines[19]))
@@ -282,6 +283,18 @@ def do_import(path, DELETE_TOP_BONE=True):
 		
 		meshes[i].vertices.add(len(coords))
 		meshes[i].vertices.foreach_set("co", unpack_list(coords))
+
+		meshOb = bpy.data.objects.new(meshName, meshes[i])
+		meshOb.vertex_groups.new("VERTEX_KEYS")
+
+		keyVertexGroup = meshOb.vertex_groups.get("VERTEX_KEYS")
+
+		for v, vertex in enumerate(meshes[i].vertices):
+			encoded_weight = (v / 20000)
+			keyVertexGroup.add([v], encoded_weight, 'ADD')
+			print ("encoded_weight {}".format(encoded_weight))
+			print ("vertex.bevel_weight {}".format(vertex.groups[keyVertexGroup.index].weight))
+			originalTangentsBinormals[str(v)] = normalsTangentsBinormals[v]
 
 		meshes[i]['originalTangentsBinormals'] = originalTangentsBinormals
 
@@ -348,7 +361,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 		#mesh.free_normals_split()
 		####NORMALS - End
 
-		meshObjects.append(bpy.data.objects.new(meshName, meshes[i]))
+		meshObjects.append(meshOb)
 		scn.objects.link(meshObjects[i])
 			
 	for mesh in meshes:
