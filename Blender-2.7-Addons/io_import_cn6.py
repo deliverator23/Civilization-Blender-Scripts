@@ -188,10 +188,10 @@ def do_import(path, DELETE_TOP_BONE=True):
 
 	# read the number of meshes
 	try:
-		lines = currentLine.split()
-		if len(lines)!=2 or lines[0]!="meshes:":
+		lines = currentLine
+		if not lines.startswith('meshes:'):
 			raise ValueError
-		numMeshes = int(lines[1])
+		numMeshes = int(lines.replace('meshes:',''))
 		if numMeshes < 0:
 			raise ValueError
 	except ValueError:
@@ -218,7 +218,17 @@ def do_import(path, DELETE_TOP_BONE=True):
 
 		meshName = lines[1][1:-1] + '#M'
 		meshes.append(bpy.data.meshes.new(meshName))
-		
+
+		# read materials
+		materialNames = []
+		while(not currentLine.startswith('vertices')):
+			currentLine = getNextLine(file)
+			if (not currentLine.startswith('materials') and not currentLine.startswith('vertices')):
+				materialNames.append(currentLine[1:-1])
+
+		print ("materialNames")
+		print (materialNames)
+
 		# read vertices
 		coords = []
 		normals = []
@@ -230,8 +240,6 @@ def do_import(path, DELETE_TOP_BONE=True):
 		numVerts = 0
 		normalsTangentsBinormals = []
 		originalTangentsBinormals = {}
-
-		currentLine = getNextLine(file)
 
 		while(not currentLine.startswith('triangles')):
 			currentLine = getNextLine(file)
@@ -248,17 +256,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 				uvs2.append([float(lines[14]), 1-float(lines[15])])
 				uvs3.append([float(lines[16]), 1-float(lines[17])])
 
-				# Stored Original Tangents and Binormals - With trimmed Coords, Normals and UV1 as Key
-#				trimmedLines = []
-#				for k in range(6):
-#					trimmedLines.append("{0:+.7f}".format(float(lines[k]))[:8])
-
-#				trimmedLines.append(
-#				trimmedLines.append("{0:+.7f}".format(float(lines[13]))[:7])
-#
-				#coordNormalKeyString = "{0}{1}{2}{3}{4}{5}{6}{7}".format(trimmedLines[0], trimmedLines[1], trimmedLines[2], trimmedLines[3], trimmedLines[4], trimmedLines[5], trimmedLines[6], trimmedLines[7])
 				normalsTangentsBinormals.append([float(lines[3]), float(lines[4]), float(lines[5]), float(lines[6]), float(lines[7]), float(lines[8]), float(lines[9]), float(lines[10]), float(lines[11])])
-				#originalTangentsBinormals[coordNormalKeyString] = tangentsBinormals
 
 				boneIds[0].append(int(lines[18]))
 				boneIds[1].append(int(lines[19]))
@@ -283,8 +281,12 @@ def do_import(path, DELETE_TOP_BONE=True):
 		
 		meshes[i].vertices.add(len(coords))
 		meshes[i].vertices.foreach_set("co", unpack_list(coords))
-
 		meshOb = bpy.data.objects.new(meshName, meshes[i])
+
+		for materialName in materialNames:
+			material = bpy.data.materials.new(materialName)
+			meshOb.data.materials.append(material)
+
 		meshOb.vertex_groups.new("VERTEX_KEYS")
 
 		keyVertexGroup = meshOb.vertex_groups.get("VERTEX_KEYS")
@@ -305,14 +307,15 @@ def do_import(path, DELETE_TOP_BONE=True):
 			currentLine = getNextLine(file)
 			if (not currentLine.startswith('mesh:') and not currentLine.startswith('end')):
 				lines = currentLine.split()
-				if len(lines) != 3:
+				if len(lines) != 4: # Fourth element is material index
 					raise ValueError
 				v1 = int(lines[0])
 				v2 = int(lines[1])
 				v3 = int(lines[2])
+				mi = int(lines[3])
 
-			if v1 < numVerts and v2 < numVerts and v3 < numVerts:
-				faces.append([v1,v2,v3,0])
+			if v1 < numVerts and v2 < numVerts and v3 < numVerts and mi < len(materialNames):
+				faces.append([v1,v2,v3,mi])
 
 		# Create Meshes and import Normals
 		mesh = meshes[i]
@@ -322,6 +325,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 		loops_vert_idx = []
 		faces_loop_start = []
 		faces_loop_total = []
+		faces_material_index = []
 		lidx = 0
 		for f in faces:
 			vidx = [f[0],f[1],f[2]]
@@ -329,11 +333,13 @@ def do_import(path, DELETE_TOP_BONE=True):
 			loops_vert_idx.extend(vidx)
 			faces_loop_start.append(lidx)
 			faces_loop_total.append(nbr_vidx)
+			faces_material_index.append(f[3])
 			lidx += nbr_vidx
 
 		mesh.loops.foreach_set("vertex_index", loops_vert_idx)
 		mesh.polygons.foreach_set("loop_start", faces_loop_start)
 		mesh.polygons.foreach_set("loop_total", faces_loop_total)
+		mesh.polygons.foreach_set("material_index", faces_material_index)
 
 		mesh.create_normals_split()
 

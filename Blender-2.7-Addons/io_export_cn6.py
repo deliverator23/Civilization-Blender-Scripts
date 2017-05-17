@@ -224,6 +224,10 @@ def do_export(filename):
 
 				filedata += 'mesh:"%s"\n' % meshName
 
+				filedata += "materials\n"
+				for material in meshObject.data.materials:
+					filedata += "%s" % material.name
+
 				# Read in preserved Normals, Binormals and Tangents
 				vertexBinormalsTangents = {}
 				originalVertexNormals = {}
@@ -457,7 +461,8 @@ def do_export(filename):
 				filedata += "triangles\n"
 				for triangle in mesh.polygons:
 					vertices = triangle.vertices
-					filedata += '%i %i %i\n' % (vertices[0],vertices[1],vertices[2])
+					materialIndex = triangle.material_index
+					filedata += '%i %i %i %i\n' % (vertices[0],vertices[1],vertices[2], materialIndex)
 
 				print ("meshName: {}".format(meshName))
 				print ("preservedTangsBinormsCount: {}".format(preservedTangsBinormsCount))
