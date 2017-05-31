@@ -421,6 +421,7 @@ class Import_nb2(bpy.types.Operator, ImportHelper):
 	bl_idname = "import_shape.cn6"
 	bl_label = "Import CN6 (.cn6)"
 	bl_description= "Import a CivNexus6 .cn6 file"
+
 	filename_ext = ".cn6"
 	filter_glob = StringProperty(default="*.cn6", options={'HIDDEN'})
 
