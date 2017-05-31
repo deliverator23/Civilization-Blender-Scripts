@@ -14,6 +14,12 @@ from mathutils import Vector, Quaternion, Matrix
 from bpy_extras.io_utils import unpack_list, unpack_face_list, ExportHelper
 import math
 import array
+from bpy.props import (
+        BoolProperty,
+        FloatProperty,
+        StringProperty,
+        EnumProperty,
+        )
 
 def getTranslationOrientation(ob):
 	if isinstance(ob, bpy.types.Bone):
@@ -501,33 +507,23 @@ def do_export(filename):
 	print ("End CN6 Export.")
 	return ""
 
-###### IMPORT OPERATOR #######
 class export_cn6(bpy.types.Operator, ExportHelper):
 
 	bl_idname = "export_shape.cn6"
 	bl_label = "Export CN6 (.cn6)"
 	bl_description= "Export a CivNexus6 .cn6 file"
+
 	filename_ext = ".cn6"
+	filter_glob = StringProperty(default="*.cn6",options={'HIDDEN'})
+	check_extension = True
 
 	def execute(self, context):
-		filepath = self.filepath
-		abspath = bpy.path.abspath(filepath)
-		directoryPath = abspath.rsplit('\\', 1)[0]
-		finalPath = "{}{}{}{}".format(directoryPath,"\\",bpy.path.display_name_from_filepath(filepath),".cn6")
-		print ("Export Filename: {}".format(finalPath))
-		do_export(finalPath)
+		print ("Export Filename: {}".format(self.filepath))
+		do_export(self.filepath)
 		return {'FINISHED'}
-
-	def invoke(self, context, event):
-		wm = context.window_manager
-		wm.fileselect_add(self)
-		return {'RUNNING_MODAL'}
-
-### REGISTER ###
 
 def menu_func(self, context):
 	self.layout.operator(export_cn6.bl_idname, text="CivNexus6 (.cn6)")
-
 
 def register():
 	bpy.utils.register_module(__name__)

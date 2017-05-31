@@ -13,9 +13,8 @@ import bpy
 import array
 from bpy.props import BoolProperty, IntProperty, EnumProperty, StringProperty
 from mathutils import Vector, Quaternion, Matrix
-from bpy_extras.io_utils import unpack_list, unpack_face_list
+from bpy_extras.io_utils import unpack_list, unpack_face_list, ImportHelper
 from math import radians
-import hashlib
 
 # Converts ms3d euler angles to a rotation matrix
 def RM(a):
@@ -29,15 +28,15 @@ def RM(a):
 
 # Converts ms3d euler angles to a quaternion
 def RQ(a):
-	angle = a[2] * 0.5;
-	sy = sin(angle);
-	cy = cos(angle);
-	angle = a[1] * 0.5;
-	sp = sin(angle);
-	cp = cos(angle);
-	angle = a[0] * 0.5;
-	sr = sin(angle);
-	cr = cos(angle);
+	angle = a[2] * 0.5
+	sy = sin(angle)
+	cy = cos(angle)
+	angle = a[1] * 0.5
+	sp = sin(angle)
+	cp = cos(angle)
+	angle = a[0] * 0.5
+	sr = sin(angle)
+	cr = cos(angle)
 	return Quaternion((cr*cp*cy+sr*sp*sy, sr*cp*cy-cr*sp*sy, cr*sp*cy+sr*cp*sy, cr*cp*sy-sr*sp*cy))
 
 def getRotationMatrix(matrix_4x4):
@@ -179,12 +178,10 @@ def do_import(path, DELETE_TOP_BONE=True):
 								 [-bone.rot_matrix[5], bone.rot_matrix[2], bone.rot_matrix[8], bone.head[2]],
 								 [0, 0, 0, 1]])
 
-
 	# Roll fix for all bones
 	for bone in armature.bones.data.edit_bones:
 		roll = bone.roll
 		bone.roll = roll - radians(90.0)
-
 
 	# read the number of meshes
 	try:
@@ -416,13 +413,10 @@ def do_import(path, DELETE_TOP_BONE=True):
 	bpy.ops.object.editmode_toggle()
 	bpy.ops.object.editmode_toggle()
 	bpy.ops.object.editmode_toggle()
-	
-	# The import was a success!
+
 	return ""
 
-
-###### IMPORT OPERATOR #######
-class Import_nb2(bpy.types.Operator):
+class Import_nb2(bpy.types.Operator, ImportHelper):
 
 	bl_idname = "import_shape.cn6"
 	bl_label = "Import CN6 (.cn6)"
@@ -430,23 +424,17 @@ class Import_nb2(bpy.types.Operator):
 	filename_ext = ".cn6"
 	filter_glob = StringProperty(default="*.cn6", options={'HIDDEN'})
 
-	filepath= StringProperty(name="File Path", description="Filepath used for importing the CN6 file", maxlen=1024, default="")
+	filepath = StringProperty(name="File Path",description="Filepath used for importing the file",maxlen=1024,subtype='FILE_PATH',
+            )
 	DELETE_TOP_BONE= BoolProperty(name="Delete Top Bone", description="Delete Top Bone", default=True)
 
 	def execute(self, context):
 		do_import(self.filepath, self.DELETE_TOP_BONE)
 		return {'FINISHED'}
 
-	def invoke(self, context, event):
-		wm = context.window_manager
-		wm.fileselect_add(self)
-		return {'RUNNING_MODAL'}
-
-### REGISTER ###
 def menu_func(self, context):
 	self.layout.operator(Import_nb2.bl_idname, text="CivNexus6 (.cn6)")
 
- 
 def register():
 	bpy.utils.register_module(__name__)
 
