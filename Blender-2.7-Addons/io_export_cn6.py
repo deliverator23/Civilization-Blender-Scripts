@@ -406,48 +406,82 @@ def do_export(filename):
 					print (len(grannyVertexBoneWeights))
 					print ("Write Vertices")
 
-					# Read UV Layers
-					uvs = {}
-					uvs2 = {}
-					uvs3 = {}
-					for l in mesh.loops:
-						if (mesh.uv_layers[0]):
-							uvs[l.vertex_index] = mesh.uv_layers[0].data[l.index].uv
-						else:
-							uvs[l.vertex_index] = (0.0, 1.0)
+					# Get unique vertex/uv coordinate combinations
+					uniqueVertSet = set()
+					uniqueVertUVIndexes = {}
+					uniqueVertUVs = []
+					currentVertUVIndex = 0
 
-						if (len(mesh.uv_layers) > 1):
-							uvs2[l.vertex_index] = mesh.uv_layers[1].data[l.index].uv
-						else:
-							uvs2[l.vertex_index] = (0.0, 1.0)
+					currentTriangleId = 0
+					triangleVertUVIndexes = []
+					triangleMaterialIndexes = []
 
-						if (len(mesh.uv_layers) > 2):
-							uvs3[l.vertex_index] = mesh.uv_layers[2].data[l.index].uv
-						else:
-							uvs3[l.vertex_index] = (0.0, 1.0)
+					for poly in mesh.polygons:
+						triangleVertUVIndexes.append([])
+
+						for loop_index in poly.loop_indices:
+							vertexId = mesh.loops[loop_index].vertex_index
+
+							if (mesh.uv_layers[0]):
+								uv = mesh.uv_layers[0].data[loop_index].uv
+							else:
+								uv = (0.0, 1.0)
+
+							if (len(mesh.uv_layers) > 1):
+								uv2 = mesh.uv_layers[1].data[loop_index].uv
+							else:
+								uv2 = (0.0, 1.0)
+
+							if (len(mesh.uv_layers) > 2):
+								uv3 = mesh.uv_layers[2].data[loop_index].uv
+							else:
+								uv3 = (0.0, 1.0)
+
+							uvt = tuple(uv)
+							uv2t = tuple(uv2)
+							uv3t = tuple(uv3)
+
+							vertSig = '%i|%.8f|%.8f|%.8f|%.8f|%.8f|%.8f' % (vertexId, uvt[0], uvt[1], uv2t[0], uv2t[1], uv3t[0], uv3t[1])
+
+							if vertSig in uniqueVertSet:
+								triangleVertUVIndex = uniqueVertUVIndexes[vertSig]
+							else:
+								uniqueVertSet.add(vertSig)
+								uniqueVertUVIndexes[vertSig] = currentVertUVIndex
+								uniqueVertUVs.append((vertexId, uvt[0], uvt[1], uv2t[0], uv2t[1], uv3t[0], uv3t[1]))
+								triangleVertUVIndex = currentVertUVIndex
+								currentVertUVIndex = currentVertUVIndex + 1
+
+							triangleVertUVIndexes[currentTriangleId].append(triangleVertUVIndex)
+
+						triangleMaterialIndexes.append(poly.material_index)
+						currentTriangleId = currentTriangleId + 1
 
 					# Write Vertices
 					preservedTangsBinormsCount = 0
 					calculatedTangsBinormsCount = 0
 
-					for index, vertex in enumerate(mesh.vertices):
+					# Write Vertices
+					for uniqueVertUV in uniqueVertUVs:
 
+						vertexIndex = uniqueVertUV[0]
+						vertex = mesh.vertices[vertexIndex]
 						vertCoord = tuple(vertex.co)
 
-						uv = uvs[index]
-						uv2 = uvs2[index]
-						uv3 = uvs3[index]
+						uv = (uniqueVertUV[1], uniqueVertUV[2])
+						uv2 = (uniqueVertUV[3], uniqueVertUV[4])
+						uv3 = (uniqueVertUV[5], uniqueVertUV[6])
 
 						vertexFound = False
 
-						if originalVertexNormals.get(str(index)) is not None:
-							tangentsBinormals = originalVertexNormals[str(index)]
+						if originalVertexNormals.get(str(vertexIndex)) is not None:
+							tangentsBinormals = originalVertexNormals[str(vertexIndex)]
 							vertNormal = (tangentsBinormals[0],tangentsBinormals[1],tangentsBinormals[2])
 							vertTangent = (tangentsBinormals[3],tangentsBinormals[4],tangentsBinormals[5])
 							vertBinormal = (tangentsBinormals[6],tangentsBinormals[7],tangentsBinormals[8])
 							vertexFound = True
 						else:
-							vertNBT = vertexNormsBinormsTangsSelected[index]
+							vertNBT = vertexNormsBinormsTangsSelected[vertexIndex]
 							vertNormal = (vertNBT[0], vertNBT[1], vertNBT[2])
 							vertTangent = (vertNBT[3], vertNBT[4], vertNBT[5])
 							vertBinormal = (vertNBT[6], vertNBT[7], vertNBT[8])
@@ -466,8 +500,8 @@ def do_export(filename):
 						filedata +='%.8f %.8f ' % (uv2[0], 1 - uv2[1])
 						filedata +='%.8f %.8f ' % (uv3[0], 1 - uv3[1])
 
-						if index in grannyVertexBoneWeights:
-							vBoneWeightTuple = grannyVertexBoneWeights[index]
+						if vertexIndex in grannyVertexBoneWeights:
+							vBoneWeightTuple = grannyVertexBoneWeights[vertexIndex]
 						else:
 							#raise "Error: Mesh has unweighted vertices!"
 							vBoneWeightTuple = ([-1,-1,-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1,-1,-1]) # Unweighted vertex - raise error
@@ -479,10 +513,9 @@ def do_export(filename):
 					filedata += "triangles\n"
 
 					outputTriangles = []
-					for triangle in mesh.polygons:
-						vertices = triangle.vertices
-						materialIndex = triangle.material_index
-						outputTriangles.append((vertices[0],vertices[1],vertices[2], materialIndex))
+					for triangle_id, triangle in enumerate(triangleVertUVIndexes): # mesh.polygons:
+						materialIndex = triangleMaterialIndexes[triangle_id]
+						outputTriangles.append((triangle[0],triangle[1],triangle[2], materialIndex))
 
 					sortedOutputTriangles = sorted(outputTriangles, key=lambda triangle: triangle[3])
 
