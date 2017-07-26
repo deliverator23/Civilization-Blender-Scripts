@@ -11,6 +11,7 @@ bl_info = {
 
 import bpy
 import array
+import shlex
 from bpy.props import BoolProperty, IntProperty, EnumProperty, StringProperty
 from mathutils import Vector, Quaternion, Matrix
 from bpy_extras.io_utils import unpack_list, unpack_face_list, ImportHelper
@@ -119,8 +120,8 @@ def do_import(path, DELETE_TOP_BONE=True):
 		currentLine = getNextLine(file)
 
 		if (not currentLine.startswith('meshes')):
-			lines = currentLine.split()
-			boneNameDict.append(lines[1][1:-1])
+			lines = shlex.split(currentLine)
+			boneNameDict.append(lines[1])
 			parentBoneIds.append(int(lines[2]))
 			positions.append([float(lines[3]), float(lines[4]), float(lines[5])])
 			quaternions.append([float(lines[6]), float(lines[7]), float(lines[8]), float(lines[9])])
