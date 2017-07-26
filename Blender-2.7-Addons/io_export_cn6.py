@@ -360,7 +360,7 @@ def do_export(filename):
 						# Sort bone mappings by weight highest to lowest
 						sortedBoneIdWeightTuples = sorted(rawBoneIdWeightTuples, key=lambda rawBoneIdWeightTuple: rawBoneIdWeightTuple[1], reverse=True)
 
-						# Pick first four highest weighted bones
+						# Pick first 8 highest weighted bones
 						boneIdsList = []
 						rawBoneWeightsList = []
 						for i in range(8):
@@ -380,16 +380,16 @@ def do_export(filename):
 						runningTotal = 0
 						for i, weight in enumerate(boneWeightsList):
 							runningTotal = runningTotal + weight
-							if runningTotal > 255:
-								boneWeightsList[i] = weight - 1
-								break
 
-						if runningTotal < 255:
-							boneWeightsList[0] = boneWeightsList[0] + 1
+						if runningTotal != 255:
+							boneWeightsList[0] = boneWeightsList[0] + (255 - runningTotal)
 
 						runningTotal = 0
 						for i, weight in enumerate(boneWeightsList):
 							runningTotal = runningTotal + weight
+
+						#print("Current Running Total")
+						#print(runningTotal)
 
 						if runningTotal != 255:
 							raise "Error: Vertex bone weights do not total 255!"
