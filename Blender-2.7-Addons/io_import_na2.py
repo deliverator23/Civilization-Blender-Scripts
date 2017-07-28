@@ -1,0 +1,291 @@
+bl_info = {
+    "name": "Import Nexus Buddy 2 Animation (.na2)",
+    "author": "Deliverator",
+    "version": (1, 0),
+    "blender": (2, 71, 0),
+    "location": "File > Import > Nexus Buddy 2 Animation (.na2)",
+    "description": "Import Nexus Buddy 2 Animation (.na2)",
+    "warning": "",
+    "wiki_url": "",
+    "category": "Import-Export"}
+
+import bpy
+from bpy.props import BoolProperty, IntProperty, EnumProperty, StringProperty
+from mathutils import Vector, Quaternion, Matrix
+from bpy_extras.io_utils import unpack_list, unpack_face_list
+from math import radians
+import re
+
+GLOBALS = {}
+EVENT_NONE = 0
+EVENT_EXIT = 1
+EVENT_REDRAW = 2
+EVENT_FILESEL = 3
+
+# Converts ms3d euler angles to a rotation matrix
+def RM(a):
+	sy = sin(a[2])
+	cy = cos(a[2])
+	sp = sin(a[1])
+	cp = cos(a[1])
+	sr = sin(a[0])
+	cr = cos(a[0])
+	return Matrix([cp*cy, cp*sy, -sp], [sr*sp*cy+cr*-sy, sr*sp*sy+cr*cy, sr*cp],[cr*sp*cy+-sr*-sy, cr*sp*sy+-sr*cy, cr*cp])
+
+# Converts ms3d euler angles to a quaternion
+def RQ(a):
+	angle = a[2] * 0.5;
+	sy = sin(angle);
+	cy = cos(angle);
+	angle = a[1] * 0.5;
+	sp = sin(angle);
+	cp = cos(angle);
+	angle = a[0] * 0.5;
+	sr = sin(angle);
+	cr = cos(angle);
+	return Quaternion(cr*cp*cy+sr*sp*sy, sr*cp*cy-cr*sp*sy, cr*sp*cy+sr*cp*sy, cr*cp*sy-sr*sp*cy)
+
+# returns the next non-empty, non-comment line from the file
+def getNextLine(file):
+	ready = False
+	while ready==False:
+		line = file.readline()
+		if len(line)==0:
+			print("Warning: End of file reached.")
+			return line
+		ready = True
+		line = line.strip()
+		if len(line)==0 or line.isspace():
+			ready = False
+		if len(line)>=2 and line[0]=='/' and line[1]=='/':
+			ready = False
+	return line
+
+def import_na2(path):
+
+	print("START NA2 IMPORT...")
+
+	# get scene
+	scene = bpy.context.scene
+	if scene==None:
+		return "No scene to import to!"
+
+	# open the file
+	try:
+		file = open(path, 'r')
+	except IOError:
+		return "Failed to open the file!"
+
+	try:
+		if not path.endswith(".na2"):
+			raise IOError
+	except IOError:
+		return "Must be an NA2 file!"
+
+	try:
+		lines = getNextLine(file).split()
+		if len(lines) != 2 or lines[0] != "FrameSets:":
+			raise ValueError
+		frameSets = int(lines[1])
+	except ValueError:
+		return "FrameSets is invalid!"
+
+	for y in range(frameSets):
+		try:
+			lines = getNextLine(file).split()
+			if len(lines) != 2 or lines[0] != "FrameCount:":
+				raise ValueError
+			numFrames = int(lines[1])
+		except ValueError:
+			return "FrameCount is invalid!"
+
+		try:
+			lines = getNextLine(file).split()
+			if len(lines) != 2 or lines[0] != "FirstFrame:":
+				raise ValueError
+			firstFrame = int(lines[1])
+		except ValueError:
+			return "FirstFrame is invalid!"
+
+		try:
+			lines = getNextLine(file).split()
+			if len(lines) != 2 or lines[0] != "LastFrame:":
+				raise ValueError
+			lastFrame = int(lines[1])
+		except ValueError:
+			return "LastFrame is invalid!"
+
+		try:
+			lines = getNextLine(file).split()
+			if len(lines) != 2 or lines[0] != "FPS:":
+				raise ValueError
+			fps = int(lines[1])
+		except ValueError:
+			return "FPS is invalid!"
+
+		try:
+			lines = getNextLine(file).split()
+			if len(lines) != 2 or lines[0] != "Bones:":
+				raise ValueError
+			numBones = int(lines[1])
+		except ValueError:
+			return "numBones is invalid!"
+
+		boneNames = []
+		boneFrameSets = []
+
+		print("numBones %d" % numBones)
+
+		for i in range(numBones):
+			try:
+				boneName = file.readline().strip()
+				boneNames.append(boneName)
+			except ValueError:
+				return "bone name is invalid!"
+
+			frames = []
+
+			for j in range(numFrames):
+				try:
+					lines = getNextLine(file).split()
+					if len(lines) != 16:
+						raise ValueError
+					frames.append( \
+						[ \
+							[float(lines[0]), float(lines[1]), float(lines[2]), float(lines[3])], \
+							[float(lines[4]), float(lines[5]), float(lines[6]), float(lines[7])], \
+							[float(lines[8]), float(lines[9]), float(lines[10]), float(lines[11])], \
+							[float(lines[12]), float(lines[13]), float(lines[14]), float(lines[15])] \
+						] \
+					)
+				except ValueError:
+					return "bone frame matrix invalid!"
+
+			boneFrameSets.append(frames)
+
+		scene.render.fps = fps
+		currentFrame = scene.frame_current
+		scene.frame_start = 1
+		scene.frame_end = currentFrame + lastFrame
+
+		allObjects = scene.objects
+		armOb = allObjects[0]
+		#pose = armOb.pose
+		#action = armOb.getAction()
+		#if not action:
+		#	action = Blender.Armature.NLA.NewAction()
+		#	action.setActive(armOb)
+
+		bpy.context.scene.objects.active = armOb
+		bpy.ops.object.mode_set(mode='POSE')
+
+		blender_action = bpy.context.blend_data.actions.new("Action")
+		if armOb.animation_data is None:
+			armOb.animation_data_create()
+		armOb.animation_data.action = blender_action
+
+		for y in range(numFrames):
+			for z in range(1,numBones):
+				boneName = boneNames[z]
+				x = boneFrameSets[z][y]
+				poseBone = armOb.pose.bones[boneName]
+				if poseBone != None:
+
+					# Correct position but scrambled
+					#animMatrix = Matrix([[x[2][0],x[0][0],x[1][0],x[3][0]],
+					#				 [x[2][1],x[0][1],x[1][1],x[3][1]],
+					#				 [x[2][2],x[0][2],x[1][2],x[3][2]],
+					#				 [0,0,0,1]])
+
+					animMatrix = Matrix([[x[2][0],x[0][0],x[1][0],x[3][0]],
+									 [x[2][1],x[0][1],x[1][1],x[3][1]],
+									 [x[2][2],x[0][2],x[1][2],x[3][2]],
+									 [0,0,0,1]])
+
+					bone = armOb.data.bones[boneName]
+					matrixWorld = bone.matrix_local
+
+					if (("Ik" in boneName) and y == 0):
+						print (boneName)
+						print ("animMatrix")
+						print (animMatrix)
+						print ("matrixWorld")
+						print (matrixWorld)
+						print ("bone.matrix")
+						print (bone.matrix)
+
+						#print ("matrixWorld.inverted()")
+						#print (matrixWorld.inverted())
+						#print ("animMatrix * matrixWorld.inverted()")
+						#print (animMatrix * matrixWorld.inverted())
+						#print ("matrixWorld.inverted() * animMatrix")
+						#print (matrixWorld.inverted() * animMatrix)
+					#scene.frame_current = currentFrame + y
+					#poseBone.matrix = Matrix([[x[0][0],x[0][1],x[0][2],0],
+					#				[x[1][0],x[1][1],x[1][2],0],
+					#				[x[2][0],x[2][1],x[2][2],0],
+					#				[x[3][0],x[3][1],x[3][2],1]])
+
+					poseBone.matrix = animMatrix
+					scene.update()
+
+					#armOb.pose.update()
+					#poseBone.insertKey(armOb, currentFrame + y, Blender.Object.Pose.LOC, True)
+					#poseBone.insertKey(armOb, currentFrame + y, Blender.Object.Pose.ROT, True)
+					poseBone.keyframe_insert(data_path = "location", frame = currentFrame + y)
+					poseBone.keyframe_insert(data_path = "rotation_quaternion", frame = currentFrame + y)
+
+					#quaternion = poseBone.rotation_quaternion
+					#poseBone.rotation_quaternion = [quaternion[0], -quaternion[3], quaternion[2], quaternion[1]]
+					#if (("Ik" in boneName) and y == 0):
+					#	print (quaternion)
+					#	print ([quaternion[0], -quaternion[3], quaternion[2], quaternion[1]])
+
+					#poseBone.keyframe_insert(data_path = "rotation_quaternion", frame = currentFrame + y)
+
+
+					#poseBone.keyframe_insert("location")
+					#poseBone.keyframe_insert("scale")
+
+	#Blender.Redraw()
+
+	return ""
+
+
+###### IMPORT OPERATOR #######
+class Import_na2(bpy.types.Operator):
+    bl_idname = "import_shape.na2"
+    bl_label = "Import NA2 (.na2)"
+    bl_description= "Import a Nexus Buddy Animation .na2 file"
+    filename_ext = ".na2"
+    filter_glob = StringProperty(default="*.na2", options={'HIDDEN'})
+
+    filepath= StringProperty(name="File Path", description="Filepath used for importing the NA2 file", maxlen=1024, default="")
+
+    def execute(self, context):
+        import_na2(self.filepath)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager   
+        wm.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+### REGISTER ###
+
+def menu_func(self, context):
+    self.layout.operator(Import_na2.bl_idname, text="Nexus Buddy Animation (.na2)")
+
+ 
+def register():
+    bpy.utils.register_module(__name__) 
+
+    bpy.types.INFO_MT_file_import.append(menu_func)
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+
+    bpy.types.INFO_MT_file_import.remove(menu_func)
+
+if __name__ == "__main__":
+    register()
