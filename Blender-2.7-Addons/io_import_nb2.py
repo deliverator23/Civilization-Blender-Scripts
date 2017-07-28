@@ -376,11 +376,12 @@ def do_import(path, DELETE_TOP_BONE=True):
 		quaternion = Quaternion((quat[3], quat[0], quat[1], quat[2])) 
 		rotMatrix = quaternion.to_matrix() 
 		rotMatrix.transpose() # Need to transpose to get same behaviour as 2.49 script
-		
-		print ("Bone Data")
-		print (fullName)
-		print (pos)
-		print (rotMatrix)
+
+		#if ("Pelvis" in fullName or "Ik" in fullName):
+		#	print ("Bone Data")
+		#	print (fullName)
+		#	print (pos)
+		#	print (rotMatrix)
 		
 		boneLength = 3
 		# set position and orientation
@@ -491,11 +492,18 @@ def do_import(path, DELETE_TOP_BONE=True):
 		if (len(armature.bones.data.edit_bones) > 1):
 			bpy.ops.object.select_pattern(pattern=name)
 			bpy.ops.armature.delete()
-		
+
 	bpy.ops.object.editmode_toggle()
 	bpy.ops.object.editmode_toggle()
 	bpy.ops.object.editmode_toggle()
-	
+
+	for bone in armature.bones:
+		if ("Ik" in bone.name):
+			print ("Bone Data")
+			print (bone.name)
+			print (bone.matrix_local)
+			print (bone.matrix)
+
 	# The import was a success!
 	return ""
 
