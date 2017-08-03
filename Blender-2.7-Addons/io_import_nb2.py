@@ -497,12 +497,12 @@ def do_import(path, DELETE_TOP_BONE=True):
 	bpy.ops.object.editmode_toggle()
 	bpy.ops.object.editmode_toggle()
 
-	for bone in armature.bones:
-		if ("Ik" in bone.name):
-			print ("Bone Data")
-			print (bone.name)
-			print (bone.matrix_local)
-			print (bone.matrix)
+	#for bone in armature.bones:
+	#	if ("Ik" in bone.name):
+	#		print ("Bone Data")
+	#		print (bone.name)
+	#		print (bone.matrix_local)
+	#		print (bone.matrix)
 
 	# The import was a success!
 	return ""
