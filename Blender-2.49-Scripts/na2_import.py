@@ -41,19 +41,6 @@ def RQ(a):
 	cr = cos(angle);
 	return Quaternion(cr*cp*cy+sr*sp*sy, sr*cp*cy-cr*sp*sy, cr*sp*cy+sr*cp*sy, cr*cp*sy-sr*sp*cy)
 
-# takes a texture filename and tries to load it
-def loadImage(path, filename):
-	image = None
-	try:
-		image = Blender.Image.Load(os.path.abspath(filename))
-	except IOError:
-		print "Warning: Failed to or: " + filename + ". Trying short path instead...\n"
-		try:
-			image = Blender.Image.Load(os.path.dirname(path) + "/" + os.path.basename(filename))
-		except IOError:
-			print "Warning: Failed to load image: " + os.path.basename(filename) + "!\n"
-	return image
-
 # returns the next non-empty, non-comment line from the file
 def getNextLine(file):
 	ready = False
