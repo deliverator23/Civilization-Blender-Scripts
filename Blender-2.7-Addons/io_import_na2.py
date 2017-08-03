@@ -12,9 +12,6 @@ bl_info = {
 import bpy
 from bpy.props import BoolProperty, IntProperty, EnumProperty, StringProperty
 from mathutils import Vector, Quaternion, Matrix
-from bpy_extras.io_utils import unpack_list, unpack_face_list
-from math import radians
-import re
 
 GLOBALS = {}
 EVENT_NONE = 0
@@ -170,11 +167,6 @@ def import_na2(path):
 
 		allObjects = scene.objects
 		armOb = allObjects[0]
-		#pose = armOb.pose
-		#action = armOb.getAction()
-		#if not action:
-		#	action = Blender.Armature.NLA.NewAction()
-		#	action.setActive(armOb)
 
 		bpy.context.scene.objects.active = armOb
 		bpy.ops.object.mode_set(mode='POSE')
@@ -191,12 +183,7 @@ def import_na2(path):
 				poseBone = armOb.pose.bones[boneName]
 				if poseBone != None:
 
-					# Correct position but scrambled
-					#animMatrix = Matrix([[x[2][0],x[0][0],x[1][0],x[3][0]],
-					#				 [x[2][1],x[0][1],x[1][1],x[3][1]],
-					#				 [x[2][2],x[0][2],x[1][2],x[3][2]],
-					#				 [0,0,0,1]])
-
+					# Correct position but wrong rotations
 					animMatrix = Matrix([[x[2][0],x[0][0],x[1][0],x[3][0]],
 									 [x[2][1],x[0][1],x[1][1],x[3][1]],
 									 [x[2][2],x[0][2],x[1][2],x[3][2]],
@@ -214,40 +201,11 @@ def import_na2(path):
 						print ("bone.matrix")
 						print (bone.matrix)
 
-						#print ("matrixWorld.inverted()")
-						#print (matrixWorld.inverted())
-						#print ("animMatrix * matrixWorld.inverted()")
-						#print (animMatrix * matrixWorld.inverted())
-						#print ("matrixWorld.inverted() * animMatrix")
-						#print (matrixWorld.inverted() * animMatrix)
-					#scene.frame_current = currentFrame + y
-					#poseBone.matrix = Matrix([[x[0][0],x[0][1],x[0][2],0],
-					#				[x[1][0],x[1][1],x[1][2],0],
-					#				[x[2][0],x[2][1],x[2][2],0],
-					#				[x[3][0],x[3][1],x[3][2],1]])
-
 					poseBone.matrix = animMatrix
 					scene.update()
 
-					#armOb.pose.update()
-					#poseBone.insertKey(armOb, currentFrame + y, Blender.Object.Pose.LOC, True)
-					#poseBone.insertKey(armOb, currentFrame + y, Blender.Object.Pose.ROT, True)
 					poseBone.keyframe_insert(data_path = "location", frame = currentFrame + y)
 					poseBone.keyframe_insert(data_path = "rotation_quaternion", frame = currentFrame + y)
-
-					#quaternion = poseBone.rotation_quaternion
-					#poseBone.rotation_quaternion = [quaternion[0], -quaternion[3], quaternion[2], quaternion[1]]
-					#if (("Ik" in boneName) and y == 0):
-					#	print (quaternion)
-					#	print ([quaternion[0], -quaternion[3], quaternion[2], quaternion[1]])
-
-					#poseBone.keyframe_insert(data_path = "rotation_quaternion", frame = currentFrame + y)
-
-
-					#poseBone.keyframe_insert("location")
-					#poseBone.keyframe_insert("scale")
-
-	#Blender.Redraw()
 
 	return ""
 
