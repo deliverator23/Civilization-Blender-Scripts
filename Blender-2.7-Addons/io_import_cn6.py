@@ -377,13 +377,15 @@ def do_import(path, DELETE_TOP_BONE=True):
 		mesh = meshOb.data
 		for mvi, vertex in enumerate(mesh.vertices):
 			for bi in range(boneCount):
-				for j in range(4):
+				for j in range(8):
 					if bi==boneIds[j][vi]:
 						name = boneNames[bi] 
 						if not meshOb.vertex_groups.get(name):
 							meshOb.vertex_groups.new(name)
 						grp = meshOb.vertex_groups.get(name)
-						grp.add([mvi], boneWeights[j][vi], 'ADD')
+						normalizedWeight = boneWeights[j][vi] / 255
+						grp.add([mvi], normalizedWeight, 'ADD')
+						#print('Vertex: %d; Index: %d; Bone: %s; Weight: %f; ' % (mvi, j, name, normalizedWeight))
 			vi = vi + 1
 		
 		# Give mesh object an armature modifier, using vertex groups but not envelopes
