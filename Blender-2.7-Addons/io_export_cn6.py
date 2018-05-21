@@ -239,20 +239,21 @@ def do_export(filename):
 					vertexBinormalsTangents = {}
 					originalVertexNormals = {}
 
-					for index, vertex in enumerate(mesh.vertices):
+					useOriginalNormals = meshObject.vertex_groups.get("VERTEX_KEYS") is not None and mesh.get('originalTangentsBinormals') is not None
 
-						if mesh.get('originalTangentsBinormals') is not None:
+					if useOriginalNormals:
+						for index, vertex in enumerate(mesh.vertices):
 
-							keyVertexGroup = meshObject.vertex_groups.get("VERTEX_KEYS")
-							if keyVertexGroup is not None:
-								weight = vertex.groups[keyVertexGroup.index].weight * 2000000
-								decodedVertexIndex = str(int(round(weight)))
+								keyVertexGroup = meshObject.vertex_groups.get("VERTEX_KEYS")
+								if keyVertexGroup is not None:
+									weight = vertex.groups[keyVertexGroup.index].weight * 2000000
+									decodedVertexIndex = str(int(round(weight)))
 
-								print ("{}: decodedVertexIndex:{}".format(index, decodedVertexIndex))
+									print ("{}: decodedVertexIndex:{}".format(index, decodedVertexIndex))
 
-								if mesh['originalTangentsBinormals'].get(decodedVertexIndex) is not None:
-									tangentsBinormals = mesh['originalTangentsBinormals'][decodedVertexIndex]
-									originalVertexNormals[str(index)] = tangentsBinormals
+									if mesh['originalTangentsBinormals'].get(decodedVertexIndex) is not None:
+										tangentsBinormals = mesh['originalTangentsBinormals'][decodedVertexIndex]
+										originalVertexNormals[str(index)] = tangentsBinormals
 
 					# This will wipe out custom normals
 					mesh.calc_tangents(mesh.uv_layers[0].name)
@@ -269,26 +270,27 @@ def do_export(filename):
 								vertexBinormalsTangents[currentVertexIndex] = []
 							vertexBinormalsTangents[currentVertexIndex].append(currentVertBinormTang)
 
-					# Reset Custom Loop Normals
-					mesh.create_normals_split()
+					if useOriginalNormals:
+						# Reset Custom Loop Normals
+						mesh.create_normals_split()
 
-					matchedLoops = 0
-					for loopIndex, loop in enumerate(mesh.loops):
-						if originalVertexNormals.get(str(loop.vertex_index)) is not None:
-							normalsEtc = originalVertexNormals[str(loop.vertex_index)]
-							loop.normal =  (normalsEtc[0], normalsEtc[1], normalsEtc[2])
-							matchedLoops += 1
+						matchedLoops = 0
+						for loopIndex, loop in enumerate(mesh.loops):
+							if originalVertexNormals.get(str(loop.vertex_index)) is not None:
+								normalsEtc = originalVertexNormals[str(loop.vertex_index)]
+								loop.normal =  (normalsEtc[0], normalsEtc[1], normalsEtc[2])
+								matchedLoops += 1
 
-					mesh.validate(clean_customdata=False)
+						mesh.validate(clean_customdata=False)
 
-					clnors = array.array('f', [0.0] * (len(mesh.loops) * 3))
-					mesh.loops.foreach_get("normal", clnors)
+						clnors = array.array('f', [0.0] * (len(mesh.loops) * 3))
+						mesh.loops.foreach_get("normal", clnors)
 
-					mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+						mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
 
-					mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
-					mesh.use_auto_smooth = True
-					mesh.show_edge_sharp = True
+						mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
+						mesh.use_auto_smooth = True
+						mesh.show_edge_sharp = True
 
 					# Average out Normals, Tangents and Bitangents for each Vertex
 					vertexNormsBinormsTangsSelected = {}
