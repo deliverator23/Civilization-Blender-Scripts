@@ -333,9 +333,8 @@ def do_import(path, DELETE_TOP_BONE=True):
 	armature = None
 	armOb = None
 	
-	print ("numBones:")
-	
-	numBones
+	print ("numBones:%d" % numBones)
+
 	if numBones > 0:
 		armature = bpy.data.armatures.new("Armature")
 		armOb = bpy.data.objects.new("ArmatureObject", armature)
