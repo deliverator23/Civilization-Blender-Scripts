@@ -71,7 +71,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 	MAX_NUMVERTS = 10000000
 	MAX_NUMNORMALS = 10000000
 	MAX_NUMTRIS = 10000000
-	MAX_NUMMATS = 1
+	MAX_NUMMATS = 10000000
 	MAX_NUMBONES = 1000000
 	MAX_NUMPOSKEYS = 0
 	MAX_NUMROTKEYS = 0
@@ -130,6 +130,8 @@ def do_import(path, DELETE_TOP_BONE=True):
 	
 	meshes = []
 	meshObjects = []
+
+	materialIndexToMeshes = {}
 	
 	for i in range(numMeshes):
 		# read name, flags and material
@@ -140,14 +142,19 @@ def do_import(path, DELETE_TOP_BONE=True):
 			meshName = lines[0]
 			meshName = meshName[1:-1] + '#M'
 			print ("processing mesh name:%s..." % meshName)
-			material = int(lines[2])
+			materialId = int(lines[2])
 		except ValueError:
 			return "Name, flags or material in mesh " + str(i+1) + " are invalid!"
 		
 		meshes.append(bpy.data.meshes.new(meshName))
 		meshObjects.append(bpy.data.objects.new(meshName, meshes[i]))
 		scn.objects.link(meshObjects[i])
-		
+
+		if materialId in materialIndexToMeshes:
+			materialIndexToMeshes[materialId].add(meshObjects[i])
+		else:
+			materialIndexToMeshes[materialId] = {meshObjects[i]}
+
 		# read the number of vertices
 		try:
 			numVerts = int(getNextLine(file))
@@ -247,19 +254,23 @@ def do_import(path, DELETE_TOP_BONE=True):
 			face_uv.uv1 = Vector(uvs[face.vertices[0]])
 			face_uv.uv2 = Vector(uvs[face.vertices[1]])
 			face_uv.uv3 = Vector(uvs[face.vertices[2]])
-			
-			if material >= 0:
-				face.material_index = material
-			
+
+			face.material_index = 0
+
+	print("materialIndexToMeshes")
+	print(materialIndexToMeshes)
+
 	for mesh in meshes:
 		mesh.update()
-	
+
 	# read the number of materials
 	try:
 		lines = getNextLine(file).split()
 		if len(lines)!=2 or lines[0]!="Materials:":
 			raise ValueError
 		numMats = int(lines[1])
+		print("numMats")
+		print(numMats)
 		if numMats < 0 or numMats > MAX_NUMMATS:
 			raise ValueError
 	except ValueError:
@@ -268,7 +279,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 	# read the materials
 	for i in range(numMats):
 			# read name
-			name = getNextLine(file)[1:-1]
+			materialName = getNextLine(file)[1:-1]
 
 			# read ambient color
 			try:
@@ -317,6 +328,12 @@ def do_import(path, DELETE_TOP_BONE=True):
 			# read texturemap
 			texturemap = getNextLine(file)[1:-1]
 			alphamap = getNextLine(file)[1:-1]
+
+			print("adding material")
+			print(materialName)
+			material = bpy.data.materials.new(materialName)
+			for meshObject in materialIndexToMeshes[i]:
+				meshObject.data.materials.append(material)
 
 	# read the number of bones
 	try:
@@ -418,7 +435,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 			return "Invalid number of position key frames!"
 
 		# read position key frames
-		posKeys[name] = []
+		#posKeys[name] = []
 		for j in range(numPosKeys):
 			# read time and position
 			try:
@@ -437,7 +454,7 @@ def do_import(path, DELETE_TOP_BONE=True):
 			return "Invalid number of rotation key frames!"
 
 		# read rotation key frames
-		rotKeys[name] = []
+		#rotKeys[name] = []
 		for j in range(numRotKeys):
 			# read time and rotation
 			try:
