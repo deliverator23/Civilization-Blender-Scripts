@@ -134,7 +134,6 @@ def do_export(filename):
 	try:
 		modelObs = {}
 		modelMeshes = {}
-		boneIds = {}
 
 		for object in bpy.data.objects:
 			if object.type == 'ARMATURE':
@@ -148,6 +147,7 @@ def do_export(filename):
 				modelMeshes[parentArmOb.name].append(object)
 
 		for modelObName in modelObs.keys():
+			boneIds = {}
 
 			# Write Skeleton
 			filedata += "skeleton\n"

@@ -276,6 +276,8 @@ def do_import(path, DELETE_TOP_BONE=True):
 	except ValueError:
 		return "Number of materials is invalid!"
 
+	materialNameToMaterialMap = {}
+
 	# read the materials
 	for i in range(numMats):
 			# read name
@@ -330,8 +332,14 @@ def do_import(path, DELETE_TOP_BONE=True):
 			alphamap = getNextLine(file)[1:-1]
 
 			print("adding material")
-			print(materialName)
-			material = bpy.data.materials.new(materialName)
+			materialName = texturemap.replace(".dds", "")
+
+			if (materialName in materialNameToMaterialMap):
+				material = materialNameToMaterialMap[materialName]
+			else:
+				material = bpy.data.materials.new(materialName)
+				materialNameToMaterialMap[materialName] = material
+
 			for meshObject in materialIndexToMeshes[i]:
 				meshObject.data.materials.append(material)
 

@@ -23,6 +23,8 @@ from bpy.props import (
         )
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 import re
+import os
+import glob
 
 # Converts ms3d euler angles to a rotation matrix
 def RM(a):
@@ -182,7 +184,7 @@ def getBoneWeights(boneName, weights):
 	return vgroup_data
 
 
-def do_import(path, DELETE_TOP_BONE=True):
+def do_import(path, materialNameToMaterialMap, DELETE_TOP_BONE=True):
     # limits
     MAX_NUMMESHES = 1000000
     MAX_NUMVERTS = 10000000
@@ -393,6 +395,8 @@ def do_import(path, DELETE_TOP_BONE=True):
     except ValueError:
         return "Number of materials is invalid!"
 
+	materialIdToMaterialNameMap = {}
+
     # read the materials
     for i in range(numMats):
         # read name
@@ -447,10 +451,20 @@ def do_import(path, DELETE_TOP_BONE=True):
         alphamap = getNextLine(file)[1:-1]
 
         print("adding material")
-        print(materialName)
-        material = bpy.data.materials.new(materialName)
-        for meshObject in materialIndexToMeshes[i]:
-            meshObject.data.materials.append(material)
+        materialName = texturemap.replace(".dds", "")
+
+        materialIdToMaterialNameMap[i] = materialName
+
+        if (materialName in materialNameToMaterialMap):
+            material = materialNameToMaterialMap[materialName]
+        else:
+            material = bpy.data.materials.new(materialName)
+            materialNameToMaterialMap[materialName] = material
+
+    for materialIndex in materialIndexToMeshes.keys:
+        for meshObject in materialIndexToMeshes[materialIndex]:
+            meshMaterial = materialNameToMaterialMap[materialIdToMaterialNameMap[materialIndex]]
+            meshObject.data.materials.append(meshMaterial)
 
     # read the number of bones
     try:
@@ -639,7 +653,7 @@ def do_import(path, DELETE_TOP_BONE=True):
     #		print (bone.matrix)
 
     # The import was a success!
-    return ""
+    return materialNameToMaterialMap
 
 def do_export(filename):
 	print ("Start CN6 Export...")
@@ -650,7 +664,6 @@ def do_export(filename):
 	try:
 		modelObs = {}
 		modelMeshes = {}
-		boneIds = {}
 
 		for object in bpy.data.objects:
 			if object.type == 'ARMATURE':
@@ -664,6 +677,7 @@ def do_export(filename):
 				modelMeshes[parentArmOb.name].append(object)
 
 		for modelObName in modelObs.keys():
+			boneIds = {}
 
 			# Write Skeleton
 			filedata += "skeleton\n"
@@ -1072,8 +1086,11 @@ def do_export(filename):
 	print ("End CN6 Export.")
 	return ""
 
+
 def do_batch_convert(filename):
 	print ("Start batch .nb2 -> .cn6 conversion...")
+
+	directory = os.path.dirname(filename)
 
 	lines = [line.rstrip('\n') for line in open(filename)]
 
@@ -1081,11 +1098,22 @@ def do_batch_convert(filename):
 		lineBits = line.split(";")
 		modelName = lineBits[0].lower()
 
-		nb2Filename = "D:\\mod\\BeyondEarthUnpacks\\RisingTide\\UnitModels\\resaveBatch\\" + modelName.replace(".gr2",".nb2")
-		cn6Filename = "D:\\mod\\BeyondEarthUnpacks\\RisingTide\\UnitModels\\resaveBatch\\" + modelName.replace(".gr2",".cn6")
+		nb2FilenameRoot = directory + "\\" + modelName.replace(".gr2","")
 
-		print("Import %s" % nb2Filename)
-		do_import(nb2Filename)
+		path = nb2FilenameRoot + "_model*.nb2"
+		materialNameToMaterialMap = {}
+		for filename in glob.glob(path):
+			print("Import %s" % filename)
+			materialNameToMaterialMap = do_import(filename, materialNameToMaterialMap)
+
+		path = nb2FilenameRoot + ".nb2"
+		materialNameToMaterialMap = {}
+		for filename in glob.glob(path):
+			print("Import %s" % filename)
+			materialNameToMaterialMap = do_import(filename, materialNameToMaterialMap)
+
+		cn6Filename = directory + "\\" + modelName.replace(".gr2",".cn6")
+
 		print("Export %s" % cn6Filename)
 		do_export(cn6Filename)
 
@@ -1093,7 +1121,7 @@ def do_batch_convert(filename):
 
 
 ###### IMPORT OPERATOR #######
-class Import_na2(bpy.types.Operator):
+class ConvertNB2CN6(bpy.types.Operator):
 	bl_idname = "import_nb2_cn6.dat"
 	bl_label = "Batch convert .nb2 to .cn6 (.dat)"
 	bl_description = "Batch convert .nb2 to .cn6"
@@ -1116,7 +1144,7 @@ class Import_na2(bpy.types.Operator):
 ### REGISTER ###
 
 def menu_func(self, context):
-	self.layout.operator(Import_na2.bl_idname, text="Batch .nb2 -> .cn6 (.dat)")
+	self.layout.operator(ConvertNB2CN6.bl_idname, text="Batch .nb2 -> .cn6 (.dat)")
 
 
 def register():
