@@ -461,7 +461,12 @@ def do_import(path, materialNameToMaterialMap, DELETE_TOP_BONE=True):
             material = bpy.data.materials.new(materialName)
             materialNameToMaterialMap[materialName] = material
 
+    print("materialIdToMaterialNameMap")
+    print(materialIdToMaterialNameMap)
+    print("materialNameToMaterialMap")
+    print(materialNameToMaterialMap)
     for materialIndex in materialIndexToMeshes.keys():
+        print ("materialIndex:%d" % materialIndex)
         for meshObject in materialIndexToMeshes[materialIndex]:
             meshMaterial = materialNameToMaterialMap[materialIdToMaterialNameMap[materialIndex]]
             meshObject.data.materials.append(meshMaterial)
