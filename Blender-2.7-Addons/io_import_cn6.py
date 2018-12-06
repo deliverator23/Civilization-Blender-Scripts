@@ -239,6 +239,8 @@ def do_import(path, DELETE_TOP_BONE=True):
 		normalsTangentsBinormals = []
 		originalTangentsBinormals = {}
 
+		nonMatchingNormalTangentBinormal = True
+
 		while(not currentLine.startswith('triangles')):
 			currentLine = getNextLine(file)
 			if (not currentLine.startswith('vertices') and not currentLine.startswith('triangles')):
@@ -249,6 +251,17 @@ def do_import(path, DELETE_TOP_BONE=True):
 				normals.append([float(lines[3]), float(lines[4]), float(lines[5])])
 				tangents.append([float(lines[6]), float(lines[7]), float(lines[8])])
 				binormals.append([float(lines[9]), float(lines[10]), float(lines[11])])
+
+				if (numVerts < 10):
+					#print("Normal/Tangent/Binormal Check")
+					#print(abs(float(lines[3]) - float(lines[6])))
+					#print(abs(float(lines[4]) - float(lines[7])))
+					#print(abs(float(lines[5]) - float(lines[8])))
+					if (abs(float(lines[3]) - float(lines[6])) < 0.000001 and abs(float(lines[4]) - float(lines[7])) < 0.000001 and abs(float(lines[5]) - float(lines[8])) < 0.000001 and
+						abs(float(lines[3]) - float(lines[9])) < 0.000001 and abs(float(lines[4]) - float(lines[10])) < 0.000001 and abs(float(lines[5]) - float(lines[11])) < 0.000001):
+						nonMatchingNormalTangentBinormal = False
+					else:
+						nonMatchingNormalTangentBinormal = True
 
 				uvs.append([float(lines[12]), 1-float(lines[13])])
 				uvs2.append([float(lines[14]), 1-float(lines[15])])
@@ -276,7 +289,9 @@ def do_import(path, DELETE_TOP_BONE=True):
 
 				meshVertexGroups[vCount] = meshName     # uses the long mesh name - may be > 21 chars
 				numVerts += 1
-		
+
+		#print ('nonMatchingNormalTangentBinormal:%s' % nonMatchingNormalTangentBinormal)
+
 		meshes[i].vertices.add(len(coords))
 		meshes[i].vertices.foreach_set("co", unpack_list(coords))
 		meshOb = bpy.data.objects.new(meshName, meshes[i])
@@ -285,16 +300,16 @@ def do_import(path, DELETE_TOP_BONE=True):
 			material = bpy.data.materials.new(materialName)
 			meshOb.data.materials.append(material)
 
-		meshOb.vertex_groups.new("VERTEX_KEYS")
+		if (nonMatchingNormalTangentBinormal):
+			meshOb.vertex_groups.new("VERTEX_KEYS")
+			keyVertexGroup = meshOb.vertex_groups.get("VERTEX_KEYS")
 
-		keyVertexGroup = meshOb.vertex_groups.get("VERTEX_KEYS")
-
-		for v, vertex in enumerate(meshes[i].vertices):
-			encoded_weight = (v / 2000000)
-			keyVertexGroup.add([v], encoded_weight, 'ADD')
-			print ("encoded_weight {}".format(encoded_weight))
-			print ("vertex.bevel_weight {}".format(vertex.groups[keyVertexGroup.index].weight))
-			originalTangentsBinormals[str(v)] = normalsTangentsBinormals[v]
+			for v, vertex in enumerate(meshes[i].vertices):
+				encoded_weight = (v / 2000000)
+				keyVertexGroup.add([v], encoded_weight, 'ADD')
+				#print ("encoded_weight {}".format(encoded_weight))
+				#print ("vertex.bevel_weight {}".format(vertex.groups[keyVertexGroup.index].weight))
+				originalTangentsBinormals[str(v)] = normalsTangentsBinormals[v]
 
 		meshes[i]['originalTangentsBinormals'] = originalTangentsBinormals
 
