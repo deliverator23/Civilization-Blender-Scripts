@@ -72,15 +72,6 @@ def getNextLine(file):
 	return line	
 
 def import_nb2(path):
-	# limits
-	MAX_NUMMESHES = 1000000
-	MAX_NUMVERTS = 10000000
-	MAX_NUMNORMALS = 10000000
-	MAX_NUMTRIS = 10000000
-	MAX_NUMMATS = 1
-	MAX_NUMBONES = 1000000
-	MAX_NUMPOSKEYS = 0
-	MAX_NUMROTKEYS = 0
 
 	# get scene
 	scn = Blender.Scene.GetCurrent()
@@ -123,7 +114,7 @@ def import_nb2(path):
 		if len(lines)!=2 or lines[0]!="Meshes:":
 			raise ValueError
 		numMeshes = int(lines[1])
-		if numMeshes < 0 or numMeshes > MAX_NUMMESHES:
+		if numMeshes < 0:
 			raise ValueError
 	except ValueError:
 		return "Number of meshes is invalid!"
@@ -151,7 +142,7 @@ def import_nb2(path):
 		# read the number of vertices
 		try:
 			numVerts = int(getNextLine(file))
-			if numVerts < 0 or numVerts > MAX_NUMVERTS:
+			if numVerts < 0:
 				raise ValueError
 		except ValueError:
 			return "Number of vertices in mesh " + str(i+1) + " is invalid!"
@@ -188,7 +179,7 @@ def import_nb2(path):
 		# read number of normals
 		try:
 			numNormals = int(getNextLine(file))
-			if numNormals < 0 or numNormals > MAX_NUMNORMALS:
+			if numNormals < 0:
 				raise ValueError
 		except ValueError:
 			return "Number of normals in mesh " + str(i+1) + " is invalid!"
@@ -209,7 +200,7 @@ def import_nb2(path):
 		# read the number of triangles
 		try:
 			numTris = int(getNextLine(file))
-			if numTris < 0 or numTris > MAX_NUMTRIS:
+			if numTris < 0:
 				raise ValueError
 		except ValueError:
 			return "Number of triangles in mesh " + str(i+1) + " is invalid!"
@@ -251,7 +242,7 @@ def import_nb2(path):
 		if len(lines)!=2 or lines[0]!="Materials:":
 			raise ValueError
 		numMats = int(lines[1])
-		if numMats < 0 or numMats > MAX_NUMMATS:
+		if numMats < 0:
 			raise ValueError
 	except ValueError:
 		return "Number of materials is invalid!"
@@ -341,7 +332,7 @@ def import_nb2(path):
 		if len(lines)!=2 or lines[0]!="Bones:":
 			raise ValueError
 		numBones = int(lines[1])
-		if numBones < 0 or numBones > MAX_NUMBONES:
+		if numBones < 0:
 			raise ValueError
 	except:
 		return "Number of bones is invalid!"
@@ -440,7 +431,7 @@ def import_nb2(path):
 		# read the number of position key frames
 		try:
 			numPosKeys = int(getNextLine(file))
-			if numPosKeys < 0 or numPosKeys > MAX_NUMPOSKEYS:
+			if numPosKeys < 0:
 				raise ValueError
 		except ValueError:
 			return "Invalid number of position key frames!"
@@ -462,7 +453,7 @@ def import_nb2(path):
 		# read the number of rotation key frames
 		try:
 			numRotKeys = int(getNextLine(file))
-			if numRotKeys < 0 or numRotKeys > MAX_NUMROTKEYS:
+			if numRotKeys < 0:
 				raise ValueError
 		except ValueError:
 			return "Invalid number of rotation key frames!"

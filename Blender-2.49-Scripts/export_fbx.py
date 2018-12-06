@@ -2921,7 +2921,11 @@ def do_help(e,v):
 # run when export is pressed
 #def fbx_ui_write(e,v):
 def fbx_ui_write(filename):
-	
+
+	if filename.lower()[-4:][:1] == '.' and not filename.lower()[-3:] == 'fbx':
+		print("Replacing file extension %s with %s" % (filename.lower()[-3:], 'fbx'))
+		filename = filename.replace(filename.lower()[-3:],'fbx')
+
 	# Dont allow overwriting files when saving normally
 	if not GLOBALS['BATCH_ENABLE'].val:
 		if not BPyMessages.Warning_SaveOver(filename):
