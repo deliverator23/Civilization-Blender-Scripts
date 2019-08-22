@@ -141,10 +141,12 @@ def do_export(filename):
 
 			if object.type == 'MESH':
 				print ("Getting parent for mesh: %s" % object.name)
-				parentArmOb = object.modifiers[0].object
-				if not parentArmOb.name in modelMeshes:
-					modelMeshes[parentArmOb.name] = []
-				modelMeshes[parentArmOb.name].append(object)
+				for modifier in object.modifiers:
+					if modifier.object is not None:
+						parentArmOb = modifier.object
+						if not parentArmOb.name in modelMeshes:
+							modelMeshes[parentArmOb.name] = []
+						modelMeshes[parentArmOb.name].append(object)
 
 		for modelObName in modelObs.keys():
 			boneIds = {}
