@@ -490,7 +490,6 @@ def do_import(path, DELETE_TOP_BONE=True):
 		mod.use_vertex_groups = True
 		# Parent Mesh Object to Armature Object
 		meshOb.parent = armOb
-		meshOb.parent_type ='ARMATURE'
 
 	if DELETE_TOP_BONE:
 		# Adjust object names, remove top bone for Civ V

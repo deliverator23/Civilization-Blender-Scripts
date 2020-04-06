@@ -1,4 +1,3 @@
-# THIS DOES NOT WORK!!!
 bl_info = {
     "name": "Import Nexus Buddy 2 Animation (.na2)",
     "author": "Deliverator",
