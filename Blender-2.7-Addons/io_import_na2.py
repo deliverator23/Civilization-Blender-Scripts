@@ -207,6 +207,10 @@ def import_na2(path):
 					poseBone.keyframe_insert(data_path = "location", frame = currentFrame + y)
 					poseBone.keyframe_insert(data_path = "rotation_quaternion", frame = currentFrame + y)
 
+			print("Frame", str(y+1), "loaded.")
+
+	print("End.")
+
 	return ""
 
 
