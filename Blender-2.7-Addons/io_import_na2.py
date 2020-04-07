@@ -12,6 +12,7 @@ bl_info = {
 import bpy
 from bpy.props import BoolProperty, IntProperty, EnumProperty, StringProperty
 from mathutils import Vector, Quaternion, Matrix
+import datetime
 
 GLOBALS = {}
 EVENT_NONE = 0
@@ -131,7 +132,8 @@ def import_na2(path):
 		boneNames = []
 		boneFrameSets = []
 
-		print("numBones %d" % numBones)
+		print("Number of bones: %d" % numBones)
+		print("Number of frames: %d" % numFrames)
 
 		for i in range(numBones):
 			try:
@@ -160,6 +162,8 @@ def import_na2(path):
 
 			boneFrameSets.append(frames)
 
+		time_before = datetime.datetime.now()
+
 		scene.render.fps = fps
 		currentFrame = scene.frame_current
 		scene.frame_start = 1
@@ -176,7 +180,14 @@ def import_na2(path):
 			armOb.animation_data_create()
 		armOb.animation_data.action = blender_action
 
+		prev_bone_matrix = {}
+		prev_matrix = None
+
 		for y in range(numFrames):
+
+			skipped_bones = 0
+			frame_time_before = datetime.datetime.now()
+
 			for z in range(1,numBones):
 				boneName = boneNames[z]
 				x = boneFrameSets[z][y]
@@ -189,25 +200,28 @@ def import_na2(path):
 									 [x[2][2],x[0][2],x[1][2],x[3][2]],
 									 [0,0,0,1]])
 
-					bone = armOb.data.bones[boneName]
-					matrixWorld = bone.matrix_local
+					if boneName in prev_bone_matrix:
+						prev_matrix = prev_bone_matrix[boneName]
 
-					if (("Ik" in boneName) and y == 0):
-						print (boneName)
-						print ("animMatrix")
-						print (animMatrix)
-						print ("matrixWorld")
-						print (matrixWorld)
-						print ("bone.matrix")
-						print (bone.matrix)
+					prev_bone_matrix[boneName] = animMatrix
 
-					poseBone.matrix = animMatrix
-					scene.update()
+					if prev_matrix and prev_matrix == animMatrix:
+						skipped_bones += 1
+						continue
+					else:
+						poseBone.matrix = animMatrix
+						scene.update()
 
-					poseBone.keyframe_insert(data_path = "location", frame = currentFrame + y)
-					poseBone.keyframe_insert(data_path = "rotation_quaternion", frame = currentFrame + y)
+						poseBone.keyframe_insert(data_path = "location", frame = currentFrame + y)
+						poseBone.keyframe_insert(data_path = "rotation_quaternion", frame = currentFrame + y)
 
-			print("Frame", str(y+1), "loaded.")
+			frame_time_after = datetime.datetime.now()
+			frame_diff = frame_time_after - frame_time_before
+			print("Frame", str(y + 1), "/", numFrames, "loaded.", "Skipped bones:", skipped_bones, "; Took", str(frame_diff.seconds), "seconds.")
+
+		time_after = datetime.datetime.now()
+		diff = time_after - time_before
+		print("Setting pose matrices done. Took ", str(diff.seconds), "seconds.")
 
 	print("End.")
 
