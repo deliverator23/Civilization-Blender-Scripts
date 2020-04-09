@@ -1,10 +1,10 @@
 bl_info = {
-    "name": "Import Nexus Buddy 2 Animation (.na2)",
+    "name": "Import Civilization Animation (.na2)",
     "author": "Deliverator",
     "version": (1, 0),
     "blender": (2, 71, 0),
-    "location": "File > Import > Nexus Buddy 2 Animation (.na2)",
-    "description": "Import Nexus Buddy 2 Animation (.na2)",
+    "location": "File > Import > Civilization Animation (.na2)",
+    "description": "Import Civilization Animation (.na2)",
     "warning": "",
     "wiki_url": "",
     "category": "Import-Export"}
@@ -231,7 +231,7 @@ def import_na2(path):
 class Import_na2(bpy.types.Operator):
     bl_idname = "import_shape.na2"
     bl_label = "Import NA2 (.na2)"
-    bl_description= "Import a Nexus Buddy Animation .na2 file"
+    bl_description= "Import a Civilization Animation .na2 file"
     filename_ext = ".na2"
     filter_glob = StringProperty(default="*.na2", options={'HIDDEN'})
 
@@ -249,7 +249,7 @@ class Import_na2(bpy.types.Operator):
 ### REGISTER ###
 
 def menu_func(self, context):
-    self.layout.operator(Import_na2.bl_idname, text="Nexus Buddy Animation (.na2)")
+    self.layout.operator(Import_na2.bl_idname, text="Civilization Animation (.na2)")
 
  
 def register():

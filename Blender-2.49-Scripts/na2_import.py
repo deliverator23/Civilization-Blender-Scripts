@@ -1,9 +1,9 @@
 #!BPY
 """ 
-Name: 'Nexus Buddy 2 Animation (.na2)...'
+Name: 'Civilization Animation (.na2)...'
 Blender: 245
 Group: 'Import'
-Tooltip: 'Import from Nexus Buddy 2 file format (.na2)'
+Tooltip: 'Import from Civilization Animation file format (.na2)'
 """
 
 import os.path
