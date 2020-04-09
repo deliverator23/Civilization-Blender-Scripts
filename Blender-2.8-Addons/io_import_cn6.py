@@ -1,6 +1,6 @@
 bl_info = {
 	"name": "Import CivNexus6 (.cn6)",
-	"author": "Deliverator",
+	"author": "Deliverator, Sukritact",
 	"version": (1, 0),
 	"blender": (2, 80, 0),
 	"location": "File > Import > CivNexus6 (.cn6)",
