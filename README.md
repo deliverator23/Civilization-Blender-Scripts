@@ -1,6 +1,6 @@
-### Blender Scripts for Nexus Buddy 2 and CivNexus6
+### Blender Scripts for Civilization V, Beyond Earth and Civilization VI
 
-These scripts are for use with Nexus Buddy 2 (the Civilization V 3D graphics modding tool) and CivNexus6 (the Civilization VI graphics modding tool).
+These scripts are for use with Nexus Buddy 2 (the Civilization V/Beyond Earth 3D graphics modding tool) and CivNexus6 (the Civilization VI graphics modding tool).
 **Installation For Blender 2.7+ or 2.8+**
 
 1. Install the Add-ons by going to Add-ons under User Preferences and selecting **Install from File...**
