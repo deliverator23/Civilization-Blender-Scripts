@@ -7,6 +7,8 @@ These scripts are for use with Nexus Buddy 2 (the Civilization V/Beyond Earth 3D
 2. Activate the Add-ons **Import-Export: Export Nexus Buddy 2 (.br2)** and  **Import-Export: Import Nexus Buddy 2 (.nb2)** (for Civ 5) or **Import-Export: Export Civ Nexus 6 (.cn6)** and  **Import-Export: Import Civ Nexus 6 (.cn6)** (for Civ 6) under User Preferences > Add-ons. 
 3. For importing Animations from either Civ 5 or Civ 6 activate the **Import: Import Civilization Animation (.na2)**. The model must be loaded first before loading the animation.
 
+2.8* versions can be used in Blender 3.*.
+
 **Installation For Blender 2.49**
 
 1. Copy the files from Blender-2.49-Scripts to your Program Files/Blender Foundation/Blender/.blender/scripts folder.
