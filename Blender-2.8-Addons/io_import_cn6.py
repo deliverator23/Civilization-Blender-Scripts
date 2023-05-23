@@ -445,8 +445,7 @@ class Import_nb2(bpy.types.Operator, ImportHelper):
 	filename_ext = ".cn6"
 	filter_glob = StringProperty(default="*.cn6", options={'HIDDEN'})
 
-	filepath = StringProperty(name="File Path",description="Filepath used for importing the file",maxlen=1024,subtype='FILE_PATH',
-			)
+	filepath = StringProperty(name="File Path",description="Filepath used for importing the file",maxlen=1024,subtype='FILE_PATH')
 	DELETE_TOP_BONE= BoolProperty(name="Delete Top Bone", description="Delete Top Bone", default=True)
 
 	def execute(self, context):
